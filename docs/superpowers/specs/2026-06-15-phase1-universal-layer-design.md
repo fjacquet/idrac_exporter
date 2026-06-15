@@ -41,7 +41,9 @@ set. The cask self-skips when that secret is absent, so releases never break mea
 - Multi-stage; **non-root `USER`** via `adduser -D -u 10001`.
 - `COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt`
   — **do not** `apk add ca-certificates` (fails behind a corporate MITM proxy).
-- Add `Dockerfile.goreleaser` (copies the prebuilt binary; no builder stage; non-root).
+- The release image is built from this same `./Dockerfile` by the `release.yml`
+  `docker/build-push-action` job (the pflex/ppdd hand-rolled reference pattern) — **no
+  `Dockerfile.goreleaser`** (that is the SDK-backed `pstore` GoReleaser `dockers_v2` variant).
 - Retain `entrypoint.sh` (the `/authconfig/$NODE_NAME` credential injection is a k8s feature)
   — verify the `/authconfig` mount is readable by uid 10001 under the non-root user.
 
