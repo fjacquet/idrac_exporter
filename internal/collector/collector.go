@@ -12,6 +12,7 @@ import (
 	"github.com/fjacquet/idrac_exporter/internal/version"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
+	"golang.org/x/sync/errgroup"
 )
 
 var mu sync.Mutex
@@ -500,213 +501,125 @@ func NewCollector() *Collector {
 }
 
 func (collector *Collector) Describe(ch chan<- *prometheus.Desc) {
-	ch <- collector.ExporterBuildInfo
-	ch <- collector.ExporterScrapeErrorsTotal
-	ch <- collector.SystemPowerOn
-	ch <- collector.SystemHealth
-	ch <- collector.SystemIndicatorLED
-	ch <- collector.SystemIndicatorActive
-	ch <- collector.SystemMemorySize
-	ch <- collector.SystemCpuCount
-	ch <- collector.SystemBiosInfo
-	ch <- collector.SystemMachineInfo
-	ch <- collector.SensorsTemperature
-	ch <- collector.SensorsFanHealth
-	ch <- collector.SensorsFanSpeed
-	ch <- collector.SensorsVoltage
-	ch <- collector.PowerSupplyHealth
-	ch <- collector.PowerSupplyOutputWatts
-	ch <- collector.PowerSupplyInputWatts
-	ch <- collector.PowerSupplyCapacityWatts
-	ch <- collector.PowerSupplyInputVoltage
-	ch <- collector.PowerSupplyEfficiencyPercent
-	ch <- collector.PowerControlConsumedWatts
-	ch <- collector.PowerControlCapacityWatts
-	ch <- collector.PowerControlMinConsumedWatts
-	ch <- collector.PowerControlMaxConsumedWatts
-	ch <- collector.PowerControlAvgConsumedWatts
-	ch <- collector.PowerControlInterval
-	ch <- collector.EventLogEntry
-	ch <- collector.StorageInfo
-	ch <- collector.StorageHealth
-	ch <- collector.StorageDriveInfo
-	ch <- collector.StorageDriveHealth
-	ch <- collector.StorageDriveCapacity
-	ch <- collector.StorageDriveLifeLeft
-	ch <- collector.StorageDriveIndicatorActive
-	ch <- collector.StorageControllerInfo
-	ch <- collector.StorageControllerHealth
-	ch <- collector.StorageControllerSpeed
-	ch <- collector.StorageControllerCacheSize
-	ch <- collector.StorageControllerCacheHealth
-	ch <- collector.StorageVolumeInfo
-	ch <- collector.StorageVolumeHealth
-	ch <- collector.StorageVolumeMediaSpan
-	ch <- collector.StorageVolumeCapacity
-	ch <- collector.MemoryModuleInfo
-	ch <- collector.MemoryModuleHealth
-	ch <- collector.MemoryModuleCapacity
-	ch <- collector.MemoryModuleSpeed
-	ch <- collector.NetworkAdapterInfo
-	ch <- collector.NetworkAdapterHealth
-	ch <- collector.NetworkPortHealth
-	ch <- collector.NetworkPortMaxSpeed
-	ch <- collector.NetworkPortCurrentSpeed
-	ch <- collector.NetworkPortLinkUp
-	ch <- collector.CpuInfo
-	ch <- collector.CpuHealth
-	ch <- collector.CpuVoltage
-	ch <- collector.CpuMaxSpeed
-	ch <- collector.CpuCurrentSpeed
-	ch <- collector.CpuTotalCores
-	ch <- collector.CpuTotalThreads
-	ch <- collector.ManagerInfo
-	ch <- collector.ManagerHealth
-	ch <- collector.DellBatteryRollupHealth
-	ch <- collector.DellEstimatedSystemAirflowCFM
-	ch <- collector.DellControllerBatteryHealth
-	ch <- collector.PduInfo
-	ch <- collector.PduHealth
-	ch <- collector.PduPowerWatts
-	ch <- collector.PduPowerApparentVA
-	ch <- collector.PduPowerFactor
-	ch <- collector.PduEnergyKWh
+	// Unchecked collector: the emitted metric name set is built dynamically with
+	// variable labels, so no descriptors are advertised at registration time. The
+	// same metrics are still produced by Collect; only registration-time descriptor
+	// validation is dropped. See Phase 2 plumbing spec §2c.
+}
+
+// runLimited runs each task in its own goroutine, bounding concurrency to limit
+// when limit > 0. limit == 0 leaves the group unlimited, preserving the historical
+// WaitGroup fan-out behavior. errgroup is used purely for SetLimit + join; the
+// tasks never return an error (they account for failures via collector.errors).
+func runLimited(limit uint, tasks []func()) {
+	var g errgroup.Group
+	if limit > 0 {
+		g.SetLimit(int(limit))
+	}
+	for _, task := range tasks {
+		g.Go(func() error {
+			task()
+			return nil
+		})
+	}
+	_ = g.Wait()
+}
+
+// refresh runs a single RefreshXxx call, recovering from panics so malformed BMC
+// JSON degrades the scrape gracefully instead of crashing the process or hanging
+// the errgroup (which does not recover panics). A panic or a false return each
+// count exactly one scrape error.
+func (collector *Collector) refresh(name string, fn func() bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("Recovered from panic in %s collection: %v", name, r)
+			collector.errors.Add(1)
+		}
+	}()
+	if !fn() {
+		collector.errors.Add(1)
+	}
 }
 
 func (collector *Collector) CollectServer(ch chan<- prometheus.Metric) {
-	var wg sync.WaitGroup
 	collect := &config.Config.Collect
+	client := collector.client
+	var tasks []func()
 
 	if collect.System {
-		wg.Add(1)
-		go func() {
-			ok := collector.client.RefreshSystem(collector, ch)
-			if !ok {
-				collector.errors.Add(1)
-			}
-			wg.Done()
-		}()
+		tasks = append(tasks, func() {
+			collector.refresh("system", func() bool { return client.RefreshSystem(collector, ch) })
+		})
 	}
 
 	if collect.Sensors {
-		wg.Add(1)
-		go func() {
-			ok := collector.client.RefreshSensors(collector, ch)
-			if !ok {
-				collector.errors.Add(1)
-			}
+		tasks = append(tasks, func() {
+			collector.refresh("sensors", func() bool { return client.RefreshSensors(collector, ch) })
 			// Voltage sensors live in the legacy Power resource. When the power
-			// group is enabled they are emitted as part of that collection (at
-			// no extra cost), otherwise they are fetched here.
+			// group is enabled they are emitted as part of that collection (at no
+			// extra cost), otherwise they are fetched here.
 			if !collect.Power {
-				ok = collector.client.RefreshVoltages(collector, ch)
-				if !ok {
-					collector.errors.Add(1)
-				}
+				collector.refresh("voltages", func() bool { return client.RefreshVoltages(collector, ch) })
 			}
-			wg.Done()
-		}()
+		})
 	}
 
 	if collect.Power {
-		wg.Add(1)
-		go func() {
-			ok := collector.client.RefreshPower(collector, ch)
-			if !ok {
-				collector.errors.Add(1)
-			}
-			wg.Done()
-		}()
+		tasks = append(tasks, func() {
+			collector.refresh("power", func() bool { return client.RefreshPower(collector, ch) })
+		})
 	}
 
 	if collect.Network {
-		wg.Add(1)
-		go func() {
-			ok := collector.client.RefreshNetwork(collector, ch)
-			if !ok {
-				collector.errors.Add(1)
-			}
-			wg.Done()
-		}()
+		tasks = append(tasks, func() {
+			collector.refresh("network", func() bool { return client.RefreshNetwork(collector, ch) })
+		})
 	}
 
 	if collect.Events {
-		wg.Add(1)
-		go func() {
-			ok := collector.client.RefreshEventLog(collector, ch)
-			if !ok {
-				collector.errors.Add(1)
-			}
-			wg.Done()
-		}()
+		tasks = append(tasks, func() {
+			collector.refresh("events", func() bool { return client.RefreshEventLog(collector, ch) })
+		})
 	}
 
 	if collect.Storage {
-		wg.Add(1)
-		go func() {
-			ok := collector.client.RefreshStorage(collector, ch)
-			if !ok {
-				collector.errors.Add(1)
-			}
-			wg.Done()
-		}()
+		tasks = append(tasks, func() {
+			collector.refresh("storage", func() bool { return client.RefreshStorage(collector, ch) })
+		})
 	}
 
 	if collect.Memory {
-		wg.Add(1)
-		go func() {
-			ok := collector.client.RefreshMemory(collector, ch)
-			if !ok {
-				collector.errors.Add(1)
-			}
-			wg.Done()
-		}()
+		tasks = append(tasks, func() {
+			collector.refresh("memory", func() bool { return client.RefreshMemory(collector, ch) })
+		})
 	}
 
 	if collect.Processors {
-		wg.Add(1)
-		go func() {
-			ok := collector.client.RefreshProcessors(collector, ch)
-			if !ok {
-				collector.errors.Add(1)
-			}
-			wg.Done()
-		}()
+		tasks = append(tasks, func() {
+			collector.refresh("processors", func() bool { return client.RefreshProcessors(collector, ch) })
+		})
 	}
 
 	if collect.Manager {
-		wg.Add(1)
-		go func() {
-			ok := collector.client.RefreshManager(collector, ch)
-			if !ok {
-				collector.errors.Add(1)
-			}
-			wg.Done()
-		}()
+		tasks = append(tasks, func() {
+			collector.refresh("manager", func() bool { return client.RefreshManager(collector, ch) })
+		})
 	}
 
 	if collect.Extra {
-		wg.Add(1)
-		go func() {
-			ok := collector.client.RefreshDell(collector, ch)
-			if !ok {
-				collector.errors.Add(1)
-			}
-			wg.Done()
-		}()
+		tasks = append(tasks, func() {
+			collector.refresh("extra", func() bool { return client.RefreshDell(collector, ch) })
+		})
 	}
 
-	wg.Wait()
+	runLimited(config.Config.Concurrency, tasks)
 }
 
 func (collector *Collector) Collect(ch chan<- prometheus.Metric) {
 	collector.client.redfish.RefreshSession()
 
 	if len(collector.client.path.RackPDUs) > 0 {
-		ok := collector.client.RefreshPDUs(collector, ch)
-		if !ok {
-			collector.errors.Add(1)
-		}
+		collector.refresh("pdus", func() bool { return collector.client.RefreshPDUs(collector, ch) })
 	} else {
 		collector.CollectServer(ch)
 	}

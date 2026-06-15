@@ -42,3 +42,23 @@ func TestPasswordFileOverridesInlinePassword(t *testing.T) {
 		t.Fatalf("Password = %q, want fromfile (password_file takes precedence)", c.Password)
 	}
 }
+
+func TestConcurrencyFromEnvironment(t *testing.T) {
+	t.Setenv("CONFIG_CONCURRENCY", "4")
+	c := NewConfig()
+	c.FromEnvironment()
+	if c.Concurrency != 4 {
+		t.Fatalf("Concurrency = %d, want 4", c.Concurrency)
+	}
+}
+
+func TestConcurrencyDefaultsToUnlimited(t *testing.T) {
+	c := NewConfig()
+	c.Hosts["default"] = &AuthConfig{Username: "u", Password: "p", Scheme: "http"}
+	if err := c.Validate(); err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+	if c.Concurrency != 0 {
+		t.Fatalf("Concurrency = %d, want 0 (unlimited default)", c.Concurrency)
+	}
+}
