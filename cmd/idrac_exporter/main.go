@@ -1,10 +1,10 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"runtime"
 	"strings"
 	"time"
@@ -12,32 +12,49 @@ import (
 	"github.com/fjacquet/idrac_exporter/internal/config"
 	"github.com/fjacquet/idrac_exporter/internal/log"
 	"github.com/fjacquet/idrac_exporter/internal/version"
+	"github.com/spf13/cobra"
 )
 
 var (
 	flagVerbose bool
 	flagDebug   bool
+	flagTrace   bool
+	flagOnce    bool
 	flagConfig  string
 	flagWatch   bool
 	flagVersion bool
 )
 
 func main() {
-	var err error
+	rootCmd := &cobra.Command{
+		Use:           "idrac_exporter",
+		Short:         "Redfish (iDRAC, iLO, XClarity, ...) exporter for Prometheus",
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE:          run,
+	}
 
-	flag.BoolVar(&flagVerbose, "verbose", false, "Enable more verbose logging")
-	flag.BoolVar(&flagDebug, "debug", false, "Dump JSON response from Redfish requests (only for debugging purpose)")
-	flag.StringVar(&flagConfig, "config", "/etc/prometheus/idrac.yml", "Path to the configuration file")
-	flag.BoolVar(&flagWatch, "config-watch", false, "Watch the configuration file for changes and enable automatic reloading")
-	flag.BoolVar(&flagVersion, "version", false, "Show version and exit")
-	flag.Parse()
+	f := rootCmd.PersistentFlags()
+	f.StringVar(&flagConfig, "config", "/etc/prometheus/idrac.yml", "Path to the configuration file")
+	f.BoolVar(&flagVerbose, "verbose", false, "Enable more verbose logging")
+	f.BoolVar(&flagDebug, "debug", false, "Dump JSON responses from Redfish requests (implies --verbose)")
+	f.BoolVar(&flagTrace, "trace", false, "Log each Redfish request (method, path, status) without credentials")
+	f.BoolVar(&flagOnce, "once", false, "Collect every configured host once, print exposition, and exit")
+	f.BoolVar(&flagWatch, "config-watch", false, "Watch the configuration file and reload on change")
+	f.BoolVar(&flagVersion, "version", false, "Show version and exit")
 
+	if err := rootCmd.Execute(); err != nil {
+		log.Fatal("%v", err)
+	}
+}
+
+func run(_ *cobra.Command, _ []string) error {
 	if flagVersion {
 		fmt.Printf("version: %s\n", version.Version)
 		fmt.Printf("revision: %s\n", version.Revision)
 		fmt.Printf("goversion: %s\n", runtime.Version())
 		fmt.Printf("platform: %s/%s\n", runtime.GOOS, runtime.GOARCH)
-		return
+		return nil
 	}
 
 	log.Info("Build information: version=%s revision=%s", version.Version, version.Revision)
@@ -47,9 +64,15 @@ func main() {
 		config.Debug = true
 		flagVerbose = true
 	}
-
+	if flagTrace {
+		config.Trace = true
+	}
 	if flagVerbose {
 		log.SetLevel(log.LevelDebug)
+	}
+
+	if flagOnce {
+		return runOnce(os.Stdout)
 	}
 
 	http.HandleFunc("/discover", discoverHandler)
@@ -68,14 +91,8 @@ func main() {
 		Addr:              bind,
 		ReadHeaderTimeout: 10 * time.Second, // mitigate Slowloris
 	}
-
 	if config.Config.TLS.Enabled {
-		err = srv.ListenAndServeTLS(config.Config.TLS.CertFile, config.Config.TLS.KeyFile)
-	} else {
-		err = srv.ListenAndServe()
+		return srv.ListenAndServeTLS(config.Config.TLS.CertFile, config.Config.TLS.KeyFile)
 	}
-
-	if err != nil {
-		log.Fatal("%v", err)
-	}
+	return srv.ListenAndServe()
 }

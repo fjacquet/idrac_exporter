@@ -11,6 +11,7 @@ import (
 )
 
 var Debug bool = false
+var Trace bool = false
 var Config *RootConfig = nil
 
 func (c *AuthConfig) Validate() error {
