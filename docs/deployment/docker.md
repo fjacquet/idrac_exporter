@@ -39,8 +39,37 @@ IDRAC1_PASSWORD='secret' docker compose -f docker-compose.ghcr.yml up -d
 - BMC Redfish scrapes are slow, so `scrape_interval`/`scrape_timeout` default to 60s/55s —
   tune them for your hardware.
 
+## The `system` label
+
+All dashboards use a single **`system`** template variable to identify the target host.
+How it is populated depends on the export path:
+
+- **Single-target quickstart (scrape path):** `prometheus.yml` attaches a static `system`
+  label to the scrape target so the dashboards' `system` variable is populated immediately:
+
+  ```yaml
+  static_configs:
+    - targets: ["idrac_exporter:9348"]
+      labels: { system: demo-bmc }
+  ```
+
+- **Multi-target fleet (scrape path):** set `system` per BMC via a relabel rule that copies
+  the `?target=` parameter:
+
+  ```yaml
+  - source_labels: [__param_target]
+    target_label: system
+  ```
+
+- **OTLP/snapshot push path:** the exporter injects `system` itself — no Prometheus relabel
+  needed. The label key is configurable via `otlp.identity_label` (default `system`), so the
+  same dashboards work for both paths without modification.
+
 ## Notes
 
 - The exporter container runs as a non-root user (uid 10001).
-- Grafana provisioning lives in `grafana/provisioning/`; the bundled dashboards are mounted
-  read-only — see [Dashboards](../dashboards.md).
+- Grafana provisioning lives in `grafana/provisioning/`; the bundled dashboards (including the
+  PDU dashboard) are auto-provisioned and mounted read-only — see [Dashboards](../dashboards.md).
+- **A reachable BMC is required** for metrics to appear. Without one, the stack still starts
+  and provisions cleanly (datasource green, all dashboards loaded, alert rules parsed), but
+  BMC-dependent panels will be empty and the exporter target will show as down in Prometheus.
