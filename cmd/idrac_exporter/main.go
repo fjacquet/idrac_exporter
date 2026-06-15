@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/fjacquet/idrac_exporter/internal/config"
 	"github.com/fjacquet/idrac_exporter/internal/log"
@@ -63,10 +64,15 @@ func main() {
 	bind := net.JoinHostPort(host, port)
 	log.Info("Server listening on %s (TLS: %v)", bind, config.Config.TLS.Enabled)
 
+	srv := &http.Server{
+		Addr:              bind,
+		ReadHeaderTimeout: 10 * time.Second, // mitigate Slowloris
+	}
+
 	if config.Config.TLS.Enabled {
-		err = http.ListenAndServeTLS(bind, config.Config.TLS.CertFile, config.Config.TLS.KeyFile, nil)
+		err = srv.ListenAndServeTLS(config.Config.TLS.CertFile, config.Config.TLS.KeyFile)
 	} else {
-		err = http.ListenAndServe(bind, nil)
+		err = srv.ListenAndServe()
 	}
 
 	if err != nil {
