@@ -1,0 +1,8 @@
+{
+  "@odata.id": "/redfish/v1/Systems/1",
+  "Id": "System.Embedded.1",
+  "Manufacturer": "Dell Inc.",
+  "Model": "PowerEdge R660",
+  "PowerState": "On",
+  "Status": { "Health": "OK", "State": "Enabled" }
+}
