@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/fjacquet/idrac_exporter/internal/collector"
 	"github.com/fjacquet/idrac_exporter/internal/config"
 	"github.com/fjacquet/idrac_exporter/internal/log"
 	"github.com/fjacquet/idrac_exporter/internal/version"
@@ -115,6 +116,27 @@ func run(_ *cobra.Command, _ []string) error {
 			Certificates: []tls.Certificate{cert},
 			MinVersion:   tls.VersionTLS12,
 		})
+	}
+
+	if config.Config.OTLP.Enabled {
+		store := collector.NewSnapshotStore()
+		interval := time.Duration(config.Config.Collection.IntervalSeconds * float64(time.Second))
+		loop := collector.NewLoop(store, interval)
+		go loop.Run(ctx)
+
+		otlp, err := collector.NewOTLP(ctx, store)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			shCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			if err := otlp.Shutdown(shCtx); err != nil {
+				log.Error("OTLP shutdown: %v", err)
+			}
+		}()
+		log.Info("OTLP push enabled: endpoint=%s protocol=%s interval=%vs",
+			config.Config.OTLP.Endpoint, config.Config.OTLP.Protocol, config.Config.OTLP.IntervalSeconds)
 	}
 
 	return serve(ctx, srv, ln)
