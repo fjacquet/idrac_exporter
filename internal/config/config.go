@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/fjacquet/idrac_exporter/internal/log"
@@ -21,6 +22,15 @@ func (c *AuthConfig) Validate() error {
 
 	if c.Username == "" {
 		return fmt.Errorf("missing username")
+	}
+
+	// password_file takes precedence over an inline password if both are set.
+	if c.PasswordFile != "" {
+		data, err := os.ReadFile(filepath.Clean(c.PasswordFile))
+		if err != nil {
+			return fmt.Errorf("read password_file: %v", err)
+		}
+		c.Password = strings.TrimSpace(string(data))
 	}
 
 	if c.Password == "" {

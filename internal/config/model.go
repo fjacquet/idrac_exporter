@@ -3,12 +3,13 @@ package config
 import "sync"
 
 type AuthConfig struct {
-	Username  string `yaml:"username"`
-	Password  string `yaml:"password"`
-	Scheme    string `yaml:"scheme"`
-	Port      uint   `yaml:"port"`
-	BasicAuth bool   `yaml:"use_basic_auth"`
-	Verify    bool   `yaml:"verify"`
+	Username     string `yaml:"username"`
+	Password     string `yaml:"password"`
+	Scheme       string `yaml:"scheme"`
+	Port         uint   `yaml:"port"`
+	BasicAuth    bool   `yaml:"use_basic_auth"`
+	Verify       bool   `yaml:"verify"`
+	PasswordFile string `yaml:"password_file"`
 }
 
 type CollectConfig struct {
