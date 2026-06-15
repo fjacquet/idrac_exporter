@@ -632,6 +632,15 @@ func (collector *Collector) Collect(ch chan<- prometheus.Metric) {
 // concurrent callers via sync.Cond so a single collection serves them all.
 // The returned slice is shared with other coalesced callers — callers that
 // mutate it (e.g. the snapshot loop) must clone first.
+//
+// Error propagation note: only the leader (the goroutine that actually runs
+// the collection) sees a non-nil error. Coalesced waiters always return
+// (lastCachedFamilies, nil) — the last successfully cached slice, or nil if
+// no collection has ever succeeded — so a leader's error is not surfaced to
+// waiters. This matches the pre-refactor text Gather() behavior and is
+// acceptable for the on-demand /metrics path (Prometheus retries next scrape).
+// A future error-aware consumer (e.g. the snapshot loop) must not assume a
+// nil error means the data is fresh.
 func (collector *Collector) GatherFamilies() ([]*dto.MetricFamily, error) {
 	collector.collected.L.Lock()
 

@@ -41,4 +41,19 @@ idrac_system_health{status="OK"} 0
 	if err := testutil.CollectAndCompare(mc, strings.NewReader(want), "idrac_system_health"); err != nil {
 		t.Fatalf("unexpected metrics: %v", err)
 	}
+
+	// Exercise the text Gather() serialization path. CollectAndCompare drives
+	// Collect(), not Gather(), so this proves the refactored Gather() still
+	// emits the exposition block derived from the gathered families.
+	got, err := mc.Gather()
+	if err != nil {
+		t.Fatalf("Gather: %v", err)
+	}
+	const wantBlock = `# HELP idrac_system_health Health status of the system
+# TYPE idrac_system_health gauge
+idrac_system_health{status="OK"} 0
+`
+	if !strings.Contains(got, wantBlock) {
+		t.Fatalf("Gather() text output missing system_health block:\n%s", got)
+	}
 }
