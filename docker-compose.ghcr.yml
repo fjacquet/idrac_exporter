@@ -44,6 +44,7 @@ services:
       - ./grafana/idrac.json:/var/lib/grafana/dashboards/idrac.json:ro
       - ./grafana/idrac_overview.json:/var/lib/grafana/dashboards/idrac_overview.json:ro
       - ./grafana/status-alternative.json:/var/lib/grafana/dashboards/status-alternative.json:ro
+      - ./grafana/pdu.json:/var/lib/grafana/dashboards/pdu.json:ro
     depends_on:
       - prometheus
     restart: unless-stopped

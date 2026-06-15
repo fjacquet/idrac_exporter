@@ -15,3 +15,9 @@ scrape_configs:
     metrics_path: /metrics
     static_configs:
       - targets: ["idrac_exporter:9348"]
+        labels:
+          system: demo-bmc
+    # For a multi-target fleet, set `system` per BMC via relabel instead:
+    #   relabel_configs:
+    #     - source_labels: [__param_target]
+    #       target_label: system
