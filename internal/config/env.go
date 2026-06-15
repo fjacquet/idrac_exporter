@@ -66,6 +66,14 @@ func (c *RootConfig) FromEnvironment() {
 	getEnvUint("CONFIG_CONCURRENCY", &c.Concurrency)
 	getEnvUint("CONFIG_DEFAULT_PORT", &port)
 
+	getEnvBool("CONFIG_OTLP_ENABLED", &c.OTLP.Enabled)
+	getEnvBool("CONFIG_OTLP_INSECURE", &c.OTLP.Insecure)
+	getEnvString("CONFIG_OTLP_ENDPOINT", &c.OTLP.Endpoint)
+	getEnvString("CONFIG_OTLP_PROTOCOL", &c.OTLP.Protocol)
+	getEnvString("CONFIG_OTLP_INTERVAL", &c.OTLP.Interval)
+	getEnvString("CONFIG_OTLP_IDENTITY_LABEL", &c.OTLP.IdentityLabel)
+	getEnvString("CONFIG_COLLECTION_INTERVAL", &c.Collection.Interval)
+
 	getEnvBool("CONFIG_DEFAULT_USE_BASIC_AUTH", &use_basic_auth)
 	getEnvBool("CONFIG_TLS_ENABLED", &c.TLS.Enabled)
 	getEnvBool("CONFIG_METRICS_ALL", &c.Collect.All)
