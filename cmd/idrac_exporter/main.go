@@ -120,10 +120,9 @@ func run(_ *cobra.Command, _ []string) error {
 
 	if config.Config.OTLP.Enabled {
 		store := collector.NewSnapshotStore()
-		interval := time.Duration(config.Config.Collection.IntervalSeconds * float64(time.Second))
-		loop := collector.NewLoop(store, interval)
-		go loop.Run(ctx)
 
+		// Build the OTLP pipeline before starting the loop, so a failed exporter
+		// setup never leaves an orphaned collection goroutine running.
 		otlp, err := collector.NewOTLP(ctx, store)
 		if err != nil {
 			return err
@@ -135,6 +134,11 @@ func run(_ *cobra.Command, _ []string) error {
 				log.Error("OTLP shutdown: %v", err)
 			}
 		}()
+
+		interval := time.Duration(config.Config.Collection.IntervalSeconds * float64(time.Second))
+		loop := collector.NewLoop(store, interval)
+		go loop.Run(ctx)
+
 		log.Info("OTLP push enabled: endpoint=%s protocol=%s interval=%vs",
 			config.Config.OTLP.Endpoint, config.Config.OTLP.Protocol, config.Config.OTLP.IntervalSeconds)
 	}
