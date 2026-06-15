@@ -21,6 +21,14 @@ port: 9348
 # Environment variable CONFIG_TIMEOUT=10
 timeout: 10
 
+# Maximum number of metric groups collected in parallel per scrape.
+# 0 (default) = unlimited. A value > 0 caps the per-scrape fan-out and the
+# per-host Redfish connection pool, which helps slow BMCs that choke on many
+# concurrent requests.
+# Default value: 0
+# Environment variable CONFIG_CONCURRENCY=0
+concurrency: 0
+
 # Prefix for the exported metrics
 # Default value: idrac
 # Environment variable CONFIG_METRICS_PREFIX=idrac
