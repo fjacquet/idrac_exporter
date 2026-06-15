@@ -1,0 +1,83 @@
+version: 2
+
+project_name: idrac_exporter
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: idrac_exporter
+    main: ./cmd/idrac_exporter
+    binary: idrac_exporter
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/fjacquet/idrac_exporter/internal/version.Version={{ .Version }}
+      - -X github.com/fjacquet/idrac_exporter/internal/version.Revision={{ .Commit }}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: idrac_exporter
+    formats:
+      - tar.gz
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    files:
+      - LICENSE
+      - README.md
+      - sample-config.yml
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+sboms:
+  - id: cyclonedx-gomod
+    artifacts: archive
+    cmd: cyclonedx-gomod
+    args:
+      - mod
+      - -licenses
+      - -json
+      - -output
+      - $document
+      - ../
+    documents:
+      - "{{ .ProjectName }}_{{ .Version }}.sbom.json"
+
+homebrew_casks:
+  - name: idrac_exporter
+    repository:
+      owner: fjacquet
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    skip_upload: '{{ if index .Env "HOMEBREW_TAP_GITHUB_TOKEN" }}false{{ else }}true{{ end }}'
+    homepage: https://github.com/fjacquet/idrac_exporter
+    description: Redfish (iDRAC, iLO, XClarity) exporter for Prometheus
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system "xattr", "-dr", "com.apple.quarantine", "#{staged_path}/idrac_exporter"
+          end
+
+changelog:
+  use: github-native
+
+release:
+  prerelease: auto
