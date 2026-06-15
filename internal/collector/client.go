@@ -105,7 +105,9 @@ func (client *Client) findAllEndpoints() bool {
 		return false
 	}
 
-	client.path.System = group.Members[0].OdataId
+	if len(group.Members) > 0 {
+		client.path.System = group.Members[0].OdataId
+	}
 
 	// Chassis
 	ok = client.redfish.Get(root.Chassis.OdataId, &group)
@@ -114,6 +116,9 @@ func (client *Client) findAllEndpoints() bool {
 	}
 
 	// Thermal and Power
+	if len(group.Members) == 0 {
+		return false
+	}
 	ok = client.redfish.Get(group.Members[0].OdataId, &chassis)
 	if !ok {
 		return false

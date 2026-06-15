@@ -57,6 +57,10 @@ func (w *xstring) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
+	if len(list) == 0 {
+		return nil
+	}
+
 	dict, ok := list[0].(map[string]any)
 	if !ok {
 		return nil
