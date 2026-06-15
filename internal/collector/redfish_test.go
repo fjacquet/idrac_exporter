@@ -22,9 +22,9 @@ func installConfig(t *testing.T, concurrency uint) {
 
 func transportOf(t *testing.T, r *Redfish) *http.Transport {
 	t.Helper()
-	tr, ok := r.http.Transport.(*http.Transport)
+	tr, ok := r.client.GetClient().Transport.(*http.Transport)
 	if !ok {
-		t.Fatalf("transport type = %T, want *http.Transport", r.http.Transport)
+		t.Fatalf("transport type = %T, want *http.Transport", r.client.GetClient().Transport)
 	}
 	return tr
 }
