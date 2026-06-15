@@ -198,6 +198,9 @@ func (mc *Collector) NewPowerSupplyHealth(ch chan<- prometheus.Metric, health, i
 }
 
 func (mc *Collector) NewPowerSupplyInputWatts(ch chan<- prometheus.Metric, value float64, id string) {
+	if value == 0 {
+		return
+	}
 	ch <- prometheus.MustNewConstMetric(
 		mc.PowerSupplyInputWatts,
 		prometheus.GaugeValue,
@@ -207,6 +210,9 @@ func (mc *Collector) NewPowerSupplyInputWatts(ch chan<- prometheus.Metric, value
 }
 
 func (mc *Collector) NewPowerSupplyInputVoltage(ch chan<- prometheus.Metric, value float64, id string) {
+	if value == 0 {
+		return
+	}
 	ch <- prometheus.MustNewConstMetric(
 		mc.PowerSupplyInputVoltage,
 		prometheus.GaugeValue,
@@ -216,6 +222,9 @@ func (mc *Collector) NewPowerSupplyInputVoltage(ch chan<- prometheus.Metric, val
 }
 
 func (mc *Collector) NewPowerSupplyOutputWatts(ch chan<- prometheus.Metric, value float64, id string) {
+	if value == 0 {
+		return
+	}
 	ch <- prometheus.MustNewConstMetric(
 		mc.PowerSupplyOutputWatts,
 		prometheus.GaugeValue,
@@ -225,6 +234,9 @@ func (mc *Collector) NewPowerSupplyOutputWatts(ch chan<- prometheus.Metric, valu
 }
 
 func (mc *Collector) NewPowerSupplyCapacityWatts(ch chan<- prometheus.Metric, value float64, id string) {
+	if value == 0 {
+		return
+	}
 	ch <- prometheus.MustNewConstMetric(
 		mc.PowerSupplyCapacityWatts,
 		prometheus.GaugeValue,
@@ -246,6 +258,9 @@ func (mc *Collector) NewPowerSupplyEfficiencyPercent(ch chan<- prometheus.Metric
 }
 
 func (mc *Collector) NewPowerControlConsumedWatts(ch chan<- prometheus.Metric, value float64, id, name string) {
+	if value == 0 {
+		return
+	}
 	ch <- prometheus.MustNewConstMetric(
 		mc.PowerControlConsumedWatts,
 		prometheus.GaugeValue,
@@ -256,6 +271,9 @@ func (mc *Collector) NewPowerControlConsumedWatts(ch chan<- prometheus.Metric, v
 }
 
 func (mc *Collector) NewPowerControlCapacityWatts(ch chan<- prometheus.Metric, value float64, id, name string) {
+	if value == 0 {
+		return
+	}
 	ch <- prometheus.MustNewConstMetric(
 		mc.PowerControlCapacityWatts,
 		prometheus.GaugeValue,
@@ -266,6 +284,9 @@ func (mc *Collector) NewPowerControlCapacityWatts(ch chan<- prometheus.Metric, v
 }
 
 func (mc *Collector) NewPowerControlMinConsumedWatts(ch chan<- prometheus.Metric, value float64, id, name string) {
+	if value == 0 {
+		return
+	}
 	ch <- prometheus.MustNewConstMetric(
 		mc.PowerControlMinConsumedWatts,
 		prometheus.GaugeValue,
@@ -276,6 +297,9 @@ func (mc *Collector) NewPowerControlMinConsumedWatts(ch chan<- prometheus.Metric
 }
 
 func (mc *Collector) NewPowerControlMaxConsumedWatts(ch chan<- prometheus.Metric, value float64, id, name string) {
+	if value == 0 {
+		return
+	}
 	ch <- prometheus.MustNewConstMetric(
 		mc.PowerControlMaxConsumedWatts,
 		prometheus.GaugeValue,
@@ -286,6 +310,9 @@ func (mc *Collector) NewPowerControlMaxConsumedWatts(ch chan<- prometheus.Metric
 }
 
 func (mc *Collector) NewPowerControlAvgConsumedWatts(ch chan<- prometheus.Metric, value float64, id, name string) {
+	if value == 0 {
+		return
+	}
 	ch <- prometheus.MustNewConstMetric(
 		mc.PowerControlAvgConsumedWatts,
 		prometheus.GaugeValue,
@@ -296,6 +323,9 @@ func (mc *Collector) NewPowerControlAvgConsumedWatts(ch chan<- prometheus.Metric
 }
 
 func (mc *Collector) NewPowerControlInterval(ch chan<- prometheus.Metric, interval float64, id, name string) {
+	if interval == 0 {
+		return
+	}
 	ch <- prometheus.MustNewConstMetric(
 		mc.PowerControlInterval,
 		prometheus.GaugeValue,
@@ -381,6 +411,9 @@ func (mc *Collector) NewStorageDriveHealth(ch chan<- prometheus.Metric, parent s
 }
 
 func (mc *Collector) NewStorageDriveCapacity(ch chan<- prometheus.Metric, parent string, m *StorageDrive) {
+	if m.CapacityBytes == 0 {
+		return
+	}
 	ch <- prometheus.MustNewConstMetric(
 		mc.StorageDriveCapacity,
 		prometheus.GaugeValue,
@@ -544,6 +577,9 @@ func (mc *Collector) NewStorageVolumeMediaSpan(ch chan<- prometheus.Metric, pare
 }
 
 func (mc *Collector) NewStorageVolumeCapacity(ch chan<- prometheus.Metric, parent string, m *StorageVolume) {
+	if m.CapacityBytes == 0 {
+		return
+	}
 	ch <- prometheus.MustNewConstMetric(
 		mc.StorageVolumeCapacity,
 		prometheus.GaugeValue,
@@ -659,6 +695,10 @@ func (mc *Collector) NewNetworkPortCurrentSpeed(ch chan<- prometheus.Metric, par
 		if s := m.SupportedLinkCapabilities[0].LinkSpeedMbps; s > 0 {
 			speed = s
 		}
+	}
+
+	if speed == 0 {
+		return
 	}
 
 	ch <- prometheus.MustNewConstMetric(
