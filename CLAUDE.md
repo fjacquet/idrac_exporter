@@ -18,7 +18,7 @@ make sbom             # CycloneDX module SBOM
 make release-snapshot # GoReleaser local dry-run (no publish)
 ```
 
-CI runs `make ci` — every CI step is a Makefile target, so it reproduces locally. There is **no test suite yet** (`*_test.go` files do not exist; tests arrive in Phase 2), so `go test -race` passes trivially. Verify changes by building and running against a real or mocked Redfish endpoint. Use `--debug` to dump every raw Redfish JSON response (implies `--verbose`) — the primary tool when adding vendor support.
+CI runs `make ci` — every CI step is a Makefile target, so it reproduces locally. Tests use a white-box `httptest` Redfish mock harness in `internal/collector` (`testhelpers_test.go`: `mockRedfish`/`testClient`/`testConfig`); `go test -race ./...` runs them and collector assertions go through `prometheus/testutil`. Also verify against a real or mocked Redfish endpoint — use `--debug` to dump every raw Redfish JSON response (implies `--verbose`), or `--trace` to log each request (method/path/status, token-safe). `--once` collects every configured host once and prints sorted exposition.
 
 Key flags: `--config <path>` (default `/etc/prometheus/idrac.yml`), `--config-watch` (hot-reload on file change via fsnotify), `--verbose`, `--debug`, `--version`.
 
