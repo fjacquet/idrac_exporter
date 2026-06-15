@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 
 	"github.com/mrlhansen/idrac_exporter/internal/config"
+	"github.com/mrlhansen/idrac_exporter/internal/log"
 	"github.com/mrlhansen/idrac_exporter/internal/version"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
@@ -491,7 +492,9 @@ func NewCollector() *Collector {
 	collector.builder = new(strings.Builder)
 	collector.collected = sync.NewCond(new(sync.Mutex))
 	collector.registry = prometheus.NewRegistry()
-	collector.registry.Register(collector)
+	if err := collector.registry.Register(collector); err != nil {
+		log.Error("Failed to register collector: %v", err)
+	}
 
 	return collector
 }
@@ -744,7 +747,9 @@ func (collector *Collector) Gather() (string, error) {
 	}
 
 	for i := range m {
-		expfmt.MetricFamilyToText(collector.builder, m[i])
+		if _, err := expfmt.MetricFamilyToText(collector.builder, m[i]); err != nil {
+			return "", err
+		}
 	}
 
 	return collector.builder.String(), nil

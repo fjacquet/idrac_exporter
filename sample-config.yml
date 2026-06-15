@@ -66,6 +66,7 @@ hosts:
     scheme: https          # CONFIG_DEFAULT_SCHEME=https
     port: 8443             # CONFIG_DEFAULT_PORT=8443
     use_basic_auth: true   # CONFIG_DEFAULT_USE_BASIC_AUTH=true
+    verify: false          # Verify the BMC TLS certificate chain (default false: BMCs use self-signed certs)
   192.168.1.1:
     username: user
     password: pass

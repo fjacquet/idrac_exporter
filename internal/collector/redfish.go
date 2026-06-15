@@ -49,7 +49,7 @@ func NewRedfish(host string, auth *config.AuthConfig) *Redfish {
 		http: &http.Client{
 			Transport: &http.Transport{
 				Proxy:                 http.ProxyFromEnvironment,
-				TLSClientConfig:       &tls.Config{InsecureSkipVerify: true},
+				TLSClientConfig:       &tls.Config{InsecureSkipVerify: !auth.Verify, MinVersion: tls.VersionTLS12},
 				MaxIdleConnsPerHost:   10,                                                 // Allow more concurrent requests per host
 				MaxConnsPerHost:       20,                                                 // Limit total connections per host
 				IdleConnTimeout:       30 * time.Second,                                   // Remove stale connections after 30s
@@ -83,7 +83,7 @@ func (r *Redfish) CreateSession() bool {
 	resp, err := r.http.Post(url, "application/json", bytes.NewBuffer(body))
 	defer func() {
 		if resp != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 	}()
 	if err != nil {
@@ -98,7 +98,7 @@ func (r *Redfish) CreateSession() bool {
 	// versions used the former.
 	if resp.StatusCode == http.StatusMethodNotAllowed {
 		if resp != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 
 		url = fmt.Sprintf("%s/redfish/v1/Sessions", r.baseurl)
@@ -151,7 +151,7 @@ func (r *Redfish) DeleteSession() bool {
 
 	resp, err := r.http.Do(req)
 	if resp != nil {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 	if err != nil {
 		log.Error("Failed to query %q: %v", url, err)
@@ -194,7 +194,7 @@ func (r *Redfish) RefreshSession() bool {
 
 	resp, err := r.http.Do(req)
 	if resp != nil {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 	if err != nil {
 		return false
@@ -235,7 +235,7 @@ func (r *Redfish) Get(path string, res any) bool {
 	log.Debug("Querying %q", url)
 	resp, err := r.http.Do(req)
 	if resp != nil {
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 	}
 	if err != nil {
 		log.Error("Failed to query %q: %v", url, err)
@@ -289,7 +289,7 @@ func (r *Redfish) Exists(path string) bool {
 
 	resp, err := r.http.Do(req)
 	if resp != nil {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 	if err != nil {
 		return false

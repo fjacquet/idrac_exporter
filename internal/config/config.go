@@ -76,7 +76,7 @@ func NewConfig() *RootConfig {
 func SetConfig(c *RootConfig) {
 	Config = c
 	if c.HttpsProxy != "" {
-		os.Setenv("HTTPS_PROXY", c.HttpsProxy)
+		_ = os.Setenv("HTTPS_PROXY", c.HttpsProxy)
 	}
 }
 

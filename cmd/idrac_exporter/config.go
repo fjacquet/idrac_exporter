@@ -59,7 +59,7 @@ func WatchConfig(filename string) {
 		log.Error("Failed to start file watcher: %v", err)
 		return
 	}
-	defer watcher.Close()
+	defer func() { _ = watcher.Close() }()
 
 	err = watcher.Add(filename)
 	if err != nil {
@@ -80,7 +80,7 @@ func WatchConfig(filename string) {
 			if event.Has(fsnotify.Write) {
 				reload = true
 			} else if event.Has(fsnotify.Remove) {
-				watcher.Remove(event.Name)
+				_ = watcher.Remove(event.Name)
 				err := watcher.Add(filename)
 				if err != nil {
 					return

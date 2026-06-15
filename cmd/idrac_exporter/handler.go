@@ -3,6 +3,7 @@ package main
 import (
 	"compress/gzip"
 	"fmt"
+	"html/template"
 	"io"
 	"net/http"
 	"strings"
@@ -30,14 +31,19 @@ const landingPageTemplate = `<html lang="en">
 <head><title>iDRAC Exporter</title></head>
 <body style="font-family: sans-serif">
 <h2>iDRAC Exporter</h2>
-<div>Build information: version=%s revision=%s</div>
+<div>Build information: version={{.Version}} revision={{.Revision}}</div>
 <ul><li><a href="/metrics">Metrics</a> (needs <code>target</code> parameter)</li></ul>
 </body>
 </html>
 `
 
+var landingPage = template.Must(template.New("landing").Parse(landingPageTemplate))
+
 func rootHandler(rsp http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(rsp, landingPageTemplate, version.Version, version.Revision)
+	_ = landingPage.Execute(rsp, struct {
+		Version  string
+		Revision string
+	}{version.Version, version.Revision})
 }
 
 func healthHandler(rsp http.ResponseWriter, req *http.Request) {
@@ -65,7 +71,8 @@ func resetHandler(rsp http.ResponseWriter, req *http.Request) {
 
 func discoverHandler(rsp http.ResponseWriter, req *http.Request) {
 	rsp.Header().Set(contentTypeHeader, "application/json")
-	fmt.Fprint(rsp, config.GetDiscover())
+	w := io.Writer(rsp)
+	_, _ = io.WriteString(w, config.GetDiscover())
 }
 
 func metricsHandler(rsp http.ResponseWriter, req *http.Request) {
@@ -113,12 +120,12 @@ func metricsHandler(rsp http.ResponseWriter, req *http.Request) {
 		defer gzipPool.Put(gz)
 
 		gz.Reset(w)
-		defer gz.Close()
+		defer func() { _ = gz.Close() }()
 
 		w = gz
 	}
 
-	fmt.Fprint(w, metrics)
+	_, _ = io.WriteString(w, metrics)
 }
 
 // gzipAccepted returns whether the client will accept gzip-encoded content.

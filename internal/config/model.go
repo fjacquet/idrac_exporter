@@ -8,6 +8,7 @@ type AuthConfig struct {
 	Scheme    string `yaml:"scheme"`
 	Port      uint   `yaml:"port"`
 	BasicAuth bool   `yaml:"use_basic_auth"`
+	Verify    bool   `yaml:"verify"`
 }
 
 type CollectConfig struct {
