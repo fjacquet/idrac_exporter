@@ -58,6 +58,7 @@ func run(_ *cobra.Command, _ []string) error {
 	}
 
 	log.Info("Build information: version=%s revision=%s", version.Version, version.Revision)
+	config.LoadDotEnv(flagConfig)
 	LoadConfig(flagConfig, flagWatch)
 
 	if flagDebug {
