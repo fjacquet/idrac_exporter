@@ -33,6 +33,7 @@
 ## Task 1: Test-harness foundation + first collector test
 
 **Files:**
+
 - Create: `internal/collector/testdata/system.json`
 - Create: `internal/collector/testhelpers_test.go`
 - Create: `internal/collector/refresh_test.go`
@@ -60,51 +61,51 @@
 package collector
 
 import (
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"strings"
-	"testing"
+ "net/http"
+ "net/http/httptest"
+ "os"
+ "strings"
+ "testing"
 
-	"github.com/fjacquet/idrac_exporter/internal/config"
+ "github.com/fjacquet/idrac_exporter/internal/config"
 )
 
 // testConfig installs a minimal valid global config with only the given metric
 // groups enabled. Tests must not run in parallel: config.Config is a singleton.
 func testConfig(t *testing.T, enable func(*config.CollectConfig)) {
-	t.Helper()
-	cfg := config.NewConfig()
-	cfg.Hosts["default"] = &config.AuthConfig{Username: "u", Password: "p", Scheme: "http"}
-	enable(&cfg.Collect)
-	if err := cfg.Validate(); err != nil {
-		t.Fatalf("validate test config: %v", err)
-	}
-	config.SetConfig(cfg)
+ t.Helper()
+ cfg := config.NewConfig()
+ cfg.Hosts["default"] = &config.AuthConfig{Username: "u", Password: "p", Scheme: "http"}
+ enable(&cfg.Collect)
+ if err := cfg.Validate(); err != nil {
+  t.Fatalf("validate test config: %v", err)
+ }
+ config.SetConfig(cfg)
 }
 
 // mockRedfish serves canned JSON per path; everything else 404s.
 func mockRedfish(t *testing.T, routes map[string]string) *httptest.Server {
-	t.Helper()
-	mux := http.NewServeMux()
-	for path, file := range routes {
-		body, err := os.ReadFile("testdata/" + file)
-		if err != nil {
-			t.Fatalf("read fixture %s: %v", file, err)
-		}
-		mux.HandleFunc(path, func(w http.ResponseWriter, _ *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write(body)
-		})
-	}
-	return httptest.NewServer(mux)
+ t.Helper()
+ mux := http.NewServeMux()
+ for path, file := range routes {
+  body, err := os.ReadFile("testdata/" + file)
+  if err != nil {
+   t.Fatalf("read fixture %s: %v", file, err)
+  }
+  mux.HandleFunc(path, func(w http.ResponseWriter, _ *http.Request) {
+   w.Header().Set("Content-Type", "application/json")
+   _, _ = w.Write(body)
+  })
+ }
+ return httptest.NewServer(mux)
 }
 
 // testClient builds a Client whose Redfish transport points at srv, using basic
 // auth so no SessionService mock is required (session is disabled).
 func testClient(srv *httptest.Server) *Client {
-	host := strings.TrimPrefix(srv.URL, "http://")
-	auth := &config.AuthConfig{Scheme: "http", Username: "u", Password: "p", BasicAuth: true}
-	return &Client{redfish: NewRedfish(host, auth)}
+ host := strings.TrimPrefix(srv.URL, "http://")
+ auth := &config.AuthConfig{Scheme: "http", Username: "u", Password: "p", BasicAuth: true}
+ return &Client{redfish: NewRedfish(host, auth)}
 }
 ```
 
@@ -116,30 +117,30 @@ func testClient(srv *httptest.Server) *Client {
 package collector
 
 import (
-	"strings"
-	"testing"
+ "strings"
+ "testing"
 
-	"github.com/fjacquet/idrac_exporter/internal/config"
-	"github.com/prometheus/client_golang/prometheus/testutil"
+ "github.com/fjacquet/idrac_exporter/internal/config"
+ "github.com/prometheus/client_golang/prometheus/testutil"
 )
 
 func TestRefreshSystem(t *testing.T) {
-	testConfig(t, func(c *config.CollectConfig) { c.System = true })
-	srv := mockRedfish(t, map[string]string{"/redfish/v1/Systems/1": "system.json"})
-	defer srv.Close()
+ testConfig(t, func(c *config.CollectConfig) { c.System = true })
+ srv := mockRedfish(t, map[string]string{"/redfish/v1/Systems/1": "system.json"})
+ defer srv.Close()
 
-	mc := NewCollector()
-	mc.client = testClient(srv)
-	mc.client.path.System = "/redfish/v1/Systems/1"
+ mc := NewCollector()
+ mc.client = testClient(srv)
+ mc.client.path.System = "/redfish/v1/Systems/1"
 
-	const want = `
+ const want = `
 # HELP idrac_system_health Health status of the system
 # TYPE idrac_system_health gauge
 idrac_system_health{status="OK"} 0
 `
-	if err := testutil.CollectAndCompare(mc, strings.NewReader(want), "idrac_system_health"); err != nil {
-		t.Fatalf("unexpected metrics: %v", err)
-	}
+ if err := testutil.CollectAndCompare(mc, strings.NewReader(want), "idrac_system_health"); err != nil {
+  t.Fatalf("unexpected metrics: %v", err)
+ }
 }
 ```
 
@@ -165,6 +166,7 @@ git commit -m "test(2a): add httptest Redfish harness and first RefreshSystem te
 ## Task 2: logrus-backed logger (TTY-aware), behind the existing API
 
 **Files:**
+
 - Modify: `internal/log/logger.go`
 - Modify: `internal/log/default.go`
 - Create: `internal/log/logger_test.go`
@@ -172,10 +174,12 @@ git commit -m "test(2a): add httptest Redfish harness and first RefreshSystem te
 - [ ] **Step 1: Add dependencies**
 
 Run:
+
 ```bash
 go get github.com/sirupsen/logrus@latest
 go get golang.org/x/term@latest
 ```
+
 Expected: `go.mod` gains both requires.
 
 - [ ] **Step 2: Write the failing test**
@@ -186,38 +190,38 @@ Expected: `go.mod` gains both requires.
 package log
 
 import (
-	"bytes"
-	"encoding/json"
-	"strings"
-	"testing"
+ "bytes"
+ "encoding/json"
+ "strings"
+ "testing"
 )
 
 func TestNonTTYEmitsJSON(t *testing.T) {
-	var buf bytes.Buffer
-	l := NewLoggerWithOutput(LevelInfo, &buf) // buffer is not a TTY -> JSON
-	l.Info("hello %s", "world")
+ var buf bytes.Buffer
+ l := NewLoggerWithOutput(LevelInfo, &buf) // buffer is not a TTY -> JSON
+ l.Info("hello %s", "world")
 
-	var entry map[string]any
-	if err := json.Unmarshal(buf.Bytes(), &entry); err != nil {
-		t.Fatalf("expected JSON log line, got %q: %v", buf.String(), err)
-	}
-	if entry["msg"] != "hello world" {
-		t.Fatalf("msg = %v, want %q", entry["msg"], "hello world")
-	}
+ var entry map[string]any
+ if err := json.Unmarshal(buf.Bytes(), &entry); err != nil {
+  t.Fatalf("expected JSON log line, got %q: %v", buf.String(), err)
+ }
+ if entry["msg"] != "hello world" {
+  t.Fatalf("msg = %v, want %q", entry["msg"], "hello world")
+ }
 }
 
 func TestLevelFiltering(t *testing.T) {
-	var buf bytes.Buffer
-	l := NewLoggerWithOutput(LevelWarn, &buf)
-	l.Info("should be filtered")
-	l.Warn("should appear")
-	out := buf.String()
-	if strings.Contains(out, "should be filtered") {
-		t.Fatalf("info line leaked at warn level: %q", out)
-	}
-	if !strings.Contains(out, "should appear") {
-		t.Fatalf("warn line missing: %q", out)
-	}
+ var buf bytes.Buffer
+ l := NewLoggerWithOutput(LevelWarn, &buf)
+ l.Info("should be filtered")
+ l.Warn("should appear")
+ out := buf.String()
+ if strings.Contains(out, "should be filtered") {
+  t.Fatalf("info line leaked at warn level: %q", out)
+ }
+ if !strings.Contains(out, "should appear") {
+  t.Fatalf("warn line missing: %q", out)
+ }
 }
 ```
 
@@ -234,67 +238,67 @@ Replace the entire contents of `internal/log/logger.go` with:
 package log
 
 import (
-	"io"
-	"os"
+ "io"
+ "os"
 
-	"github.com/sirupsen/logrus"
-	"golang.org/x/term"
+ "github.com/sirupsen/logrus"
+ "golang.org/x/term"
 )
 
 const (
-	LevelFatal = iota
-	LevelError
-	LevelWarn
-	LevelInfo
-	LevelDebug
+ LevelFatal = iota
+ LevelError
+ LevelWarn
+ LevelInfo
+ LevelDebug
 )
 
 var levelToLogrus = map[int]logrus.Level{
-	LevelFatal: logrus.FatalLevel,
-	LevelError: logrus.ErrorLevel,
-	LevelWarn:  logrus.WarnLevel,
-	LevelInfo:  logrus.InfoLevel,
-	LevelDebug: logrus.DebugLevel,
+ LevelFatal: logrus.FatalLevel,
+ LevelError: logrus.ErrorLevel,
+ LevelWarn:  logrus.WarnLevel,
+ LevelInfo:  logrus.InfoLevel,
+ LevelDebug: logrus.DebugLevel,
 }
 
 const timestampFormat = "2006-01-02T15:04:05.000"
 
 // Logger wraps logrus, preserving the package's printf-style API.
 type Logger struct {
-	l *logrus.Logger
+ l *logrus.Logger
 }
 
 func formatterFor(w io.Writer) logrus.Formatter {
-	if f, ok := w.(*os.File); ok && term.IsTerminal(int(f.Fd())) {
-		return &logrus.TextFormatter{FullTimestamp: true, TimestampFormat: timestampFormat}
-	}
-	return &logrus.JSONFormatter{TimestampFormat: timestampFormat}
+ if f, ok := w.(*os.File); ok && term.IsTerminal(int(f.Fd())) {
+  return &logrus.TextFormatter{FullTimestamp: true, TimestampFormat: timestampFormat}
+ }
+ return &logrus.JSONFormatter{TimestampFormat: timestampFormat}
 }
 
 func NewLoggerWithOutput(level int, w io.Writer) *Logger {
-	l := logrus.New()
-	l.SetOutput(w)
-	l.SetFormatter(formatterFor(w))
-	l.SetLevel(levelToLogrus[level])
-	return &Logger{l: l}
+ l := logrus.New()
+ l.SetOutput(w)
+ l.SetFormatter(formatterFor(w))
+ l.SetLevel(levelToLogrus[level])
+ return &Logger{l: l}
 }
 
 // NewLogger builds a logger writing to stdout. The console arg is retained for
 // API compatibility and ignored (formatter selection is TTY-aware).
 func NewLogger(level int, _ bool) *Logger {
-	return NewLoggerWithOutput(level, os.Stdout)
+ return NewLoggerWithOutput(level, os.Stdout)
 }
 
 func (log *Logger) SetLevel(level int) { log.l.SetLevel(levelToLogrus[level]) }
 
 func (log *Logger) SetLogFile(path string) error {
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
-	if err != nil {
-		return err
-	}
-	log.l.SetOutput(f)
-	log.l.SetFormatter(formatterFor(f))
-	return nil
+ f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+ if err != nil {
+  return err
+ }
+ log.l.SetOutput(f)
+ log.l.SetFormatter(formatterFor(f))
+ return nil
 }
 
 func (log *Logger) Fatal(format string, args ...any) { log.l.Fatalf(format, args...) }
@@ -338,6 +342,7 @@ git commit -m "feat(2a): back internal/log with logrus, TTY-aware text/JSON form
 ## Task 3: cobra root command
 
 **Files:**
+
 - Modify: `cmd/idrac_exporter/main.go`
 
 - [ ] **Step 1: Add the dependency**
@@ -353,106 +358,108 @@ Replace the contents of `cmd/idrac_exporter/main.go` with:
 package main
 
 import (
-	"fmt"
-	"net"
-	"net/http"
-	"os"
-	"runtime"
-	"strings"
-	"time"
+ "fmt"
+ "net"
+ "net/http"
+ "os"
+ "runtime"
+ "strings"
+ "time"
 
-	"github.com/fjacquet/idrac_exporter/internal/config"
-	"github.com/fjacquet/idrac_exporter/internal/log"
-	"github.com/fjacquet/idrac_exporter/internal/version"
-	"github.com/spf13/cobra"
+ "github.com/fjacquet/idrac_exporter/internal/config"
+ "github.com/fjacquet/idrac_exporter/internal/log"
+ "github.com/fjacquet/idrac_exporter/internal/version"
+ "github.com/spf13/cobra"
 )
 
 var (
-	flagVerbose bool
-	flagDebug   bool
-	flagTrace   bool
-	flagOnce    bool
-	flagConfig  string
-	flagWatch   bool
-	flagVersion bool
+ flagVerbose bool
+ flagDebug   bool
+ flagTrace   bool
+ flagOnce    bool
+ flagConfig  string
+ flagWatch   bool
+ flagVersion bool
 )
 
 func main() {
-	rootCmd := &cobra.Command{
-		Use:           "idrac_exporter",
-		Short:         "Redfish (iDRAC, iLO, XClarity, ...) exporter for Prometheus",
-		SilenceUsage:  true,
-		SilenceErrors: true,
-		RunE:          run,
-	}
+ rootCmd := &cobra.Command{
+  Use:           "idrac_exporter",
+  Short:         "Redfish (iDRAC, iLO, XClarity, ...) exporter for Prometheus",
+  SilenceUsage:  true,
+  SilenceErrors: true,
+  RunE:          run,
+ }
 
-	f := rootCmd.PersistentFlags()
-	f.StringVar(&flagConfig, "config", "/etc/prometheus/idrac.yml", "Path to the configuration file")
-	f.BoolVar(&flagVerbose, "verbose", false, "Enable more verbose logging")
-	f.BoolVar(&flagDebug, "debug", false, "Dump JSON responses from Redfish requests (implies --verbose)")
-	f.BoolVar(&flagTrace, "trace", false, "Log each Redfish request (method, path, status) without credentials")
-	f.BoolVar(&flagOnce, "once", false, "Collect every configured host once, print exposition, and exit")
-	f.BoolVar(&flagWatch, "config-watch", false, "Watch the configuration file and reload on change")
-	f.BoolVar(&flagVersion, "version", false, "Show version and exit")
+ f := rootCmd.PersistentFlags()
+ f.StringVar(&flagConfig, "config", "/etc/prometheus/idrac.yml", "Path to the configuration file")
+ f.BoolVar(&flagVerbose, "verbose", false, "Enable more verbose logging")
+ f.BoolVar(&flagDebug, "debug", false, "Dump JSON responses from Redfish requests (implies --verbose)")
+ f.BoolVar(&flagTrace, "trace", false, "Log each Redfish request (method, path, status) without credentials")
+ f.BoolVar(&flagOnce, "once", false, "Collect every configured host once, print exposition, and exit")
+ f.BoolVar(&flagWatch, "config-watch", false, "Watch the configuration file and reload on change")
+ f.BoolVar(&flagVersion, "version", false, "Show version and exit")
 
-	if err := rootCmd.Execute(); err != nil {
-		log.Fatal("%v", err)
-	}
+ if err := rootCmd.Execute(); err != nil {
+  log.Fatal("%v", err)
+ }
 }
 
 func run(_ *cobra.Command, _ []string) error {
-	if flagVersion {
-		fmt.Printf("version: %s\n", version.Version)
-		fmt.Printf("revision: %s\n", version.Revision)
-		fmt.Printf("goversion: %s\n", runtime.Version())
-		fmt.Printf("platform: %s/%s\n", runtime.GOOS, runtime.GOARCH)
-		return nil
-	}
+ if flagVersion {
+  fmt.Printf("version: %s\n", version.Version)
+  fmt.Printf("revision: %s\n", version.Revision)
+  fmt.Printf("goversion: %s\n", runtime.Version())
+  fmt.Printf("platform: %s/%s\n", runtime.GOOS, runtime.GOARCH)
+  return nil
+ }
 
-	log.Info("Build information: version=%s revision=%s", version.Version, version.Revision)
-	LoadConfig(flagConfig, flagWatch)
+ log.Info("Build information: version=%s revision=%s", version.Version, version.Revision)
+ LoadConfig(flagConfig, flagWatch)
 
-	if flagDebug {
-		config.Debug = true
-		flagVerbose = true
-	}
-	if flagTrace {
-		config.Trace = true
-	}
-	if flagVerbose {
-		log.SetLevel(log.LevelDebug)
-	}
+ if flagDebug {
+  config.Debug = true
+  flagVerbose = true
+ }
+ if flagTrace {
+  config.Trace = true
+ }
+ if flagVerbose {
+  log.SetLevel(log.LevelDebug)
+ }
 
-	if flagOnce {
-		return runOnce(os.Stdout)
-	}
+ if flagOnce {
+  return runOnce(os.Stdout)
+ }
 
-	http.HandleFunc("/discover", discoverHandler)
-	http.HandleFunc("/metrics", metricsHandler)
-	http.HandleFunc("/health", healthHandler)
-	http.HandleFunc("/reload", reloadHandler)
-	http.HandleFunc("/reset", resetHandler)
-	http.HandleFunc("/", rootHandler)
+ http.HandleFunc("/discover", discoverHandler)
+ http.HandleFunc("/metrics", metricsHandler)
+ http.HandleFunc("/health", healthHandler)
+ http.HandleFunc("/reload", reloadHandler)
+ http.HandleFunc("/reset", resetHandler)
+ http.HandleFunc("/", rootHandler)
 
-	port := fmt.Sprintf("%d", config.Config.Port)
-	host := strings.Trim(config.Config.Address, "[]")
-	bind := net.JoinHostPort(host, port)
-	log.Info("Server listening on %s (TLS: %v)", bind, config.Config.TLS.Enabled)
+ port := fmt.Sprintf("%d", config.Config.Port)
+ host := strings.Trim(config.Config.Address, "[]")
+ bind := net.JoinHostPort(host, port)
+ log.Info("Server listening on %s (TLS: %v)", bind, config.Config.TLS.Enabled)
 
-	srv := &http.Server{Addr: bind, ReadHeaderTimeout: 10 * time.Second}
-	if config.Config.TLS.Enabled {
-		return srv.ListenAndServeTLS(config.Config.TLS.CertFile, config.Config.TLS.KeyFile)
-	}
-	return srv.ListenAndServe()
+ srv := &http.Server{Addr: bind, ReadHeaderTimeout: 10 * time.Second}
+ if config.Config.TLS.Enabled {
+  return srv.ListenAndServeTLS(config.Config.TLS.CertFile, config.Config.TLS.KeyFile)
+ }
+ return srv.ListenAndServe()
 }
 ```
 
 - [ ] **Step 3: Build and smoke-test the CLI**
 
 Run:
+
 ```bash
 go build ./... && go run ./cmd/idrac_exporter --version
 ```
+
 Expected: prints version/revision/goversion/platform and exits 0.
 
 - [ ] **Step 4: Verify flags parse**
@@ -477,6 +484,7 @@ git commit -m "feat(2a): migrate CLI to cobra (rootCmd + --once/--trace flags)"
 ## Task 4: `--once` (collect all hosts, sorted exposition)
 
 **Files:**
+
 - Create: `cmd/idrac_exporter/once.go`
 
 - [ ] **Step 1: Implement runOnce**
@@ -487,42 +495,42 @@ git commit -m "feat(2a): migrate CLI to cobra (rootCmd + --once/--trace flags)"
 package main
 
 import (
-	"fmt"
-	"io"
-	"sort"
+ "fmt"
+ "io"
+ "sort"
 
-	"github.com/fjacquet/idrac_exporter/internal/collector"
-	"github.com/fjacquet/idrac_exporter/internal/config"
-	"github.com/fjacquet/idrac_exporter/internal/log"
+ "github.com/fjacquet/idrac_exporter/internal/collector"
+ "github.com/fjacquet/idrac_exporter/internal/config"
+ "github.com/fjacquet/idrac_exporter/internal/log"
 )
 
 // runOnce collects every configured host (except the "default" credential
 // fallback) exactly once and writes their exposition to w, sorted by target so
 // the output is diffable. It is the live-validation path behind --once.
 func runOnce(w io.Writer) error {
-	targets := make([]string, 0, len(config.Config.Hosts))
-	for t := range config.Config.Hosts {
-		if t == "default" {
-			continue
-		}
-		targets = append(targets, t)
-	}
-	sort.Strings(targets)
+ targets := make([]string, 0, len(config.Config.Hosts))
+ for t := range config.Config.Hosts {
+  if t == "default" {
+   continue
+  }
+  targets = append(targets, t)
+ }
+ sort.Strings(targets)
 
-	for _, target := range targets {
-		c, err := collector.GetCollector(target, "")
-		if err != nil {
-			log.Error("once: collector for %s: %v", target, err)
-			continue
-		}
-		metrics, err := c.Gather()
-		if err != nil {
-			log.Error("once: gather %s: %v", target, err)
-			continue
-		}
-		fmt.Fprintf(w, "# target %s\n%s", target, metrics)
-	}
-	return nil
+ for _, target := range targets {
+  c, err := collector.GetCollector(target, "")
+  if err != nil {
+   log.Error("once: collector for %s: %v", target, err)
+   continue
+  }
+  metrics, err := c.Gather()
+  if err != nil {
+   log.Error("once: gather %s: %v", target, err)
+   continue
+  }
+  fmt.Fprintf(w, "# target %s\n%s", target, metrics)
+ }
+ return nil
 }
 ```
 
@@ -552,6 +560,7 @@ git commit -m "feat(2a): --once collects every configured host and prints sorted
 ## Task 5: `--trace` (token-safe Redfish request logging)
 
 **Files:**
+
 - Modify: `internal/config/config.go` (add `Trace` flag)
 - Modify: `internal/collector/redfish.go` (log requests when tracing)
 - Create: `internal/collector/trace_test.go`
@@ -572,36 +581,36 @@ var Trace bool = false
 package collector
 
 import (
-	"bytes"
-	"testing"
+ "bytes"
+ "testing"
 
-	"github.com/fjacquet/idrac_exporter/internal/config"
-	"github.com/fjacquet/idrac_exporter/internal/log"
+ "github.com/fjacquet/idrac_exporter/internal/config"
+ "github.com/fjacquet/idrac_exporter/internal/log"
 )
 
 func TestTraceNeverLeaksToken(t *testing.T) {
-	testConfig(t, func(c *config.CollectConfig) {})
-	srv := mockRedfish(t, map[string]string{"/redfish/v1/Systems/1": "system.json"})
-	defer srv.Close()
+ testConfig(t, func(c *config.CollectConfig) {})
+ srv := mockRedfish(t, map[string]string{"/redfish/v1/Systems/1": "system.json"})
+ defer srv.Close()
 
-	var buf bytes.Buffer
-	log.SetDefaultLogger(log.NewLoggerWithOutput(log.LevelDebug, &buf))
-	config.Trace = true
-	defer func() { config.Trace = false }()
+ var buf bytes.Buffer
+ log.SetDefaultLogger(log.NewLoggerWithOutput(log.LevelDebug, &buf))
+ config.Trace = true
+ defer func() { config.Trace = false }()
 
-	c := testClient(srv)
-	c.redfish.session.token = "SUPERSECRET-TOKEN"
+ c := testClient(srv)
+ c.redfish.session.token = "SUPERSECRET-TOKEN"
 
-	var out struct{ Id string }
-	c.redfish.Get("/redfish/v1/Systems/1", &out)
+ var out struct{ Id string }
+ c.redfish.Get("/redfish/v1/Systems/1", &out)
 
-	logged := buf.String()
-	if !bytes.Contains(buf.Bytes(), []byte("/redfish/v1/Systems/1")) {
-		t.Fatalf("trace did not log the request path: %q", logged)
-	}
-	if bytes.Contains(buf.Bytes(), []byte("SUPERSECRET-TOKEN")) {
-		t.Fatalf("trace leaked the auth token: %q", logged)
-	}
+ logged := buf.String()
+ if !bytes.Contains(buf.Bytes(), []byte("/redfish/v1/Systems/1")) {
+  t.Fatalf("trace did not log the request path: %q", logged)
+ }
+ if bytes.Contains(buf.Bytes(), []byte("SUPERSECRET-TOKEN")) {
+  t.Fatalf("trace leaked the auth token: %q", logged)
+ }
 }
 ```
 
@@ -619,9 +628,9 @@ Expected: FAIL — no trace line is logged yet (path assertion fails).
 In `internal/collector/redfish.go`, inside `func (r *Redfish) Get(...)`, immediately after the request succeeds and the status is known (right after the `resp, err := r.http.Do(req)` error check, before reading the body), add:
 
 ```go
-	if config.Trace {
-		log.Info("trace: GET %s -> %d", path, resp.StatusCode)
-	}
+ if config.Trace {
+  log.Info("trace: GET %s -> %d", path, resp.StatusCode)
+ }
 ```
 
 Apply the same one-liner in `Exists` (`HEAD %s -> %d`). Do **not** log headers or the request body — the `X-Auth-Token` header therefore never reaches the log. (Bodies are still available under `--debug` via the existing `config.Debug` dump, which logs response bodies only — never request headers.)
@@ -648,16 +657,20 @@ git commit -m "feat(2a): token-safe --trace request logging"
 ## Task 6: Update callers to double-dash flags
 
 **Files:**
+
 - Modify: `Makefile`
 - Modify: `README.md`
 
 - [ ] **Step 1: Update RUNFLAGS**
 
 In `Makefile`, change:
+
 ```make
 RUNFLAGS ?= -config config.yml -verbose
 ```
+
 to:
+
 ```make
 RUNFLAGS ?= --config config.yml --verbose
 ```

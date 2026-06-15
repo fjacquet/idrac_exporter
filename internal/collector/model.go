@@ -102,7 +102,6 @@ type V1Response struct {
 		DeepOperations struct {
 			DeepPATCH bool `json:"DeepPATCH"`
 			DeepPOST  bool `json:"DeepPOST"`
-			MaxLevels int  `json:"MaxLevels"`
 		} `json:"DeepOperations"`
 		ExpandQuery struct {
 			ExpandAll bool `json:"ExpandAll"`
@@ -148,7 +147,7 @@ type Processor struct {
 	ProcessorType     string  `json:"ProcessorType"`
 	Socket            xstring `json:"Socket"`
 	Status            Status  `json:"Status"`
-	TDPWatts          float64 `json:"TDPWatts"`
+	MaxTDPWatts       float64 `json:"MaxTDPWatts"`
 	TotalCores        int     `json:"TotalCores"`
 	TotalEnabledCores int     `json:"TotalEnabledCores"`
 	TotalThreads      int     `json:"TotalThreads"`
@@ -268,7 +267,7 @@ func (f *Fan) GetId(fallback int) string {
 
 type Temperature struct {
 	Name                string  `json:"Name"`
-	Number              int     `json:"Number"`
+	SensorNumber        int     `json:"SensorNumber"`
 	MemberId            string  `json:"MemberId"`
 	ReadingCelsius      float64 `json:"ReadingCelsius"`
 	MaxReadingRangeTemp float64 `json:"MaxReadingRangeTemp"`
@@ -282,8 +281,8 @@ func (t *Temperature) GetId(fallback int) string {
 	if len(t.MemberId) > 0 {
 		return t.MemberId
 	}
-	if t.Number > 0 {
-		return strconv.Itoa(t.Number)
+	if t.SensorNumber > 0 {
+		return strconv.Itoa(t.SensorNumber)
 	}
 	return strconv.Itoa(fallback)
 }
@@ -311,12 +310,9 @@ type ThermalFan struct {
 }
 
 type ThermalMetrics struct {
-	Id          string `json:"Id"`
-	Name        string `json:"Name"`
-	Description string `json:"Description"`
-	PowerWatts  struct {
-		Reading float64 `json:"Reading"`
-	} `json:"PowerWatts"`
+	Id                         string `json:"Id"`
+	Name                       string `json:"Name"`
+	Description                string `json:"Description"`
 	TemperatureReadingsCelsius []struct {
 		DeviceName      string   `json:"DeviceName"`
 		PhysicalContext string   `json:"PhysicalContext"`
@@ -633,16 +629,14 @@ type PowerResponse struct {
 }
 
 type PowerControlUnit struct {
-	Id                      string  `json:"Id"`
-	Name                    string  `json:"Name"`
-	PowerAllocatedWatts     float64 `json:"PowerAllocatedWatts"`
-	PowerAvailableWatts     float64 `json:"PowerAvailableWatts"`
-	PowerCapacityWatts      float64 `json:"PowerCapacityWatts"`
-	PowerConsumedWatts      float64 `json:"PowerConsumedWatts"`
-	PowerRequestedWatts     float64 `json:"PowerRequestedWatts"`
-	ChassisPowerConsumption float64 `json:"ChassisPowerConsumption"`
-	NodePowerConsumption    float64 `json:"NodePowerConsumption"`
-	PowerLimit              *struct {
+	Id                  string  `json:"Id"`
+	Name                string  `json:"Name"`
+	PowerAllocatedWatts float64 `json:"PowerAllocatedWatts"`
+	PowerAvailableWatts float64 `json:"PowerAvailableWatts"`
+	PowerCapacityWatts  float64 `json:"PowerCapacityWatts"`
+	PowerConsumedWatts  float64 `json:"PowerConsumedWatts"`
+	PowerRequestedWatts float64 `json:"PowerRequestedWatts"`
+	PowerLimit          *struct {
 		CorrectionInMs int    `json:"CorrectionInMs"`
 		LimitException string `json:"LimitException"`
 		LimitInWatts   int    `json:"LimitInWatts"`

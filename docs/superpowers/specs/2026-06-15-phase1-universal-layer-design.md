@@ -21,6 +21,7 @@ set. The cask self-skips when that secret is absent, so releases never break mea
 ## PR 1a — Build foundation
 
 ### Module rename
+
 - `go mod edit -module github.com/fjacquet/idrac_exporter`; rewrite every
   `github.com/mrlhansen/idrac_exporter` import across all `.go` files.
 - Update `Makefile` `REPOSITORY` var and the ldflags path.
@@ -31,6 +32,7 @@ set. The cask self-skips when that secret is absent, so releases never break mea
   This is a deliberate, documented deviation from the family's `main.version` convention.
 
 ### Go & Makefile
+
 - `go.mod`: `go 1.26.4` (patch-pinned, not bare `1.26`).
 - Full Makefile contract: `tools fmt-check fmt vet lint test test-race test-coverage vuln
   ci sure cli sbom release release-snapshot docker run-cli clean`. `make tools` installs
@@ -38,6 +40,7 @@ set. The cask self-skips when that secret is absent, so releases never break mea
   with the ldflags above. `CGO_ENABLED=0` for release builds.
 
 ### Dockerfile
+
 - Multi-stage; **non-root `USER`** via `adduser -D -u 10001`.
 - `COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt`
   — **do not** `apk add ca-certificates` (fails behind a corporate MITM proxy).
@@ -48,11 +51,13 @@ set. The cask self-skips when that secret is absent, so releases never break mea
   — verify the `/authconfig` mount is readable by uid 10001 under the non-root user.
 
 ### .gitignore
+
 - Expand to the canonical family set: build artifacts (`idrac_exporter`, `bin/`,
   `coverage.html`, `dist/`), logs, `site/`, local secrets (`.env`, `*.local.yaml`,
   `.claude.local.md`, `.claude/settings.local.json`), editor/OS noise, `.rtk/`.
 
 ### 1a exit criteria
+
 - `make build` and `make cli` produce a runnable binary under the new module path.
 - `make sure` (fmt + vet + test + build + lint) is green — see the **golangci-lint** risk below.
 - `docker build` succeeds; `docker run … id -u` reports `10001`.
@@ -62,6 +67,7 @@ set. The cask self-skips when that secret is absent, so releases never break mea
 ## PR 1b — CI/CD + supply-chain + docs
 
 ### Workflow trio (+ kept Helm)
+
 - **`ci.yml`** — PRs + push to `main`: `make ci` (gofmt check, `go vet`, golangci-lint,
   `go test -race`, govulncheck) + CycloneDX SBOM artifact + Semgrep. `cache: true` (speed).
 - **`release.yml`** — `v*` tags: GoReleaser job (binaries + SBOM + GitHub Release) **+**
@@ -76,6 +82,7 @@ set. The cask self-skips when that secret is absent, so releases never break mea
 - Replaced & deleted: `go-binaries.yml` (→ GoReleaser), `docker-images.yml` (→ image job).
 
 ### Workflow hardening (all workflows)
+
 - `persist-credentials: false` on every `actions/checkout` **except** the Helm chart-push
   checkout.
 - Pages perms scoped to the deploy job (`contents: read` at workflow level; `pages: write` +
@@ -86,6 +93,7 @@ set. The cask self-skips when that secret is absent, so releases never break mea
 - `.github/dependabot.yml`: `github-actions` + `gomod` + `docker`.
 
 ### `.goreleaser.yaml` (`version: 2`)
+
 - `builds`: `CGO_ENABLED=0`, `goos:[linux,darwin,windows]`, `goarch:[amd64,arm64]`,
   `-trimpath`, `ldflags: -s -w -X …/internal/version.Version={{.Version}} -X …/internal/version.Revision={{.Commit}}`,
   `mod_timestamp: {{.CommitTimestamp}}`.
@@ -96,6 +104,7 @@ set. The cask self-skips when that secret is absent, so releases never break mea
 - Validate with `goreleaser check`; dry-run with `make release-snapshot`.
 
 ### Docs & ADRs
+
 - MkDocs Material skeleton: `mkdocs.yml` + `docs/index.md` + nav (ADR section now; `metrics.md`,
   `dashboards.md`, `deployment/` are placeholders filled in later phases).
 - `docs/adr/` with `index.md` and **8 ADRs** (`NNNN-title.md`,
@@ -110,6 +119,7 @@ set. The cask self-skips when that secret is absent, so releases never break mea
 - README: 6 canonical badges (CI status, latest release, Go Report Card, Go version, license, docs).
 
 ### 1b exit criteria
+
 - `make ci` green locally; `goreleaser check` passes; `make release-snapshot` emits `dist/`
   binaries + `checksums.txt` + SBOM.
 - Semgrep clean (see TLS risk below); `mkdocs build --strict` succeeds; ADR `index.md` complete.
