@@ -3,7 +3,6 @@ package collector
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/fjacquet/idrac_exporter/internal/config"
@@ -63,18 +62,9 @@ func NewOTLP(ctx context.Context, store *SnapshotStore) (*OTLP, error) {
 	return &OTLP{provider: provider}, nil
 }
 
-// Shutdown stops the reader and attempts a best-effort final export. Export
-// delivery errors (e.g. unreachable collector endpoint) are silently dropped;
-// the caller cannot remediate them and OTLP is explicitly best-effort.
+// Shutdown stops the reader and flushes a final export. A failed final flush
+// (e.g. the collector is unreachable at shutdown) is returned to the caller,
+// which logs it — OTLP delivery is best-effort and must not be silently dropped.
 func (o *OTLP) Shutdown(ctx context.Context) error {
-	err := o.provider.Shutdown(ctx)
-	if err == nil {
-		return nil
-	}
-	// OTel wraps export failures as "failed to upload metrics: …"; treat these
-	// as best-effort and do not propagate.
-	if strings.HasPrefix(err.Error(), "failed to upload metrics") {
-		return nil
-	}
-	return err
+	return o.provider.Shutdown(ctx)
 }
