@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mrlhansen/idrac_exporter/internal/config"
+	"github.com/fjacquet/idrac_exporter/internal/config"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

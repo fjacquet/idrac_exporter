@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mrlhansen/idrac_exporter/internal/config"
-	"github.com/mrlhansen/idrac_exporter/internal/log"
+	"github.com/fjacquet/idrac_exporter/internal/config"
+	"github.com/fjacquet/idrac_exporter/internal/log"
 )
 
 type RedfishSession struct {

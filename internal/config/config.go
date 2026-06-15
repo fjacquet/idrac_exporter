@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mrlhansen/idrac_exporter/internal/log"
+	"github.com/fjacquet/idrac_exporter/internal/log"
 	"github.com/xhit/go-str2duration/v2"
 	"gopkg.in/yaml.v3"
 )

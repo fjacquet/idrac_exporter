@@ -3,10 +3,10 @@ package main
 import (
 	"time"
 
+	"github.com/fjacquet/idrac_exporter/internal/collector"
+	"github.com/fjacquet/idrac_exporter/internal/config"
+	"github.com/fjacquet/idrac_exporter/internal/log"
 	"github.com/fsnotify/fsnotify"
-	"github.com/mrlhansen/idrac_exporter/internal/collector"
-	"github.com/mrlhansen/idrac_exporter/internal/config"
-	"github.com/mrlhansen/idrac_exporter/internal/log"
 )
 
 func ReloadConfig(filename string) {

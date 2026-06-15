@@ -8,9 +8,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/mrlhansen/idrac_exporter/internal/config"
-	"github.com/mrlhansen/idrac_exporter/internal/log"
-	"github.com/mrlhansen/idrac_exporter/internal/version"
+	"github.com/fjacquet/idrac_exporter/internal/config"
+	"github.com/fjacquet/idrac_exporter/internal/log"
+	"github.com/fjacquet/idrac_exporter/internal/version"
 )
 
 var (

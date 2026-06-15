@@ -3,7 +3,7 @@ package config
 import (
 	"encoding/json"
 
-	"github.com/mrlhansen/idrac_exporter/internal/log"
+	"github.com/fjacquet/idrac_exporter/internal/log"
 )
 
 type DiscoverItem struct {

@@ -1,6 +1,6 @@
-module github.com/mrlhansen/idrac_exporter
+module github.com/fjacquet/idrac_exporter
 
-go 1.25.0
+go 1.26.4
 
 require (
 	github.com/fsnotify/fsnotify v1.9.0

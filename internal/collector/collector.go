@@ -7,9 +7,9 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/mrlhansen/idrac_exporter/internal/config"
-	"github.com/mrlhansen/idrac_exporter/internal/log"
-	"github.com/mrlhansen/idrac_exporter/internal/version"
+	"github.com/fjacquet/idrac_exporter/internal/config"
+	"github.com/fjacquet/idrac_exporter/internal/log"
+	"github.com/fjacquet/idrac_exporter/internal/version"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
 )
