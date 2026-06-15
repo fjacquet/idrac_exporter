@@ -117,3 +117,15 @@ metrics:
 events:
   severity: warning  # CONFIG_EVENTS_SEVERITY=warning
   maxage: 7d         # CONFIG_EVENTS_MAXAGE=7d
+
+# Optional background snapshot loop + OTLP push (off by default).
+# collection:
+#   interval: 60s
+# otlp:
+#   enabled: false
+#   endpoint: "localhost:4317"
+#   protocol: grpc
+#   insecure: false
+#   interval: 0s
+#   identity_label: system
+#   headers: {}
