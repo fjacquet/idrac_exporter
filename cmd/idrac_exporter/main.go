@@ -1,12 +1,16 @@
 package main
 
 import (
+	"context"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/fjacquet/idrac_exporter/internal/config"
@@ -94,8 +98,24 @@ func run(_ *cobra.Command, _ []string) error {
 		Addr:              bind,
 		ReadHeaderTimeout: 10 * time.Second, // mitigate Slowloris
 	}
-	if config.Config.TLS.Enabled {
-		return srv.ListenAndServeTLS(config.Config.TLS.CertFile, config.Config.TLS.KeyFile)
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	ln, err := net.Listen("tcp", bind)
+	if err != nil {
+		return err
 	}
-	return srv.ListenAndServe()
+	if config.Config.TLS.Enabled {
+		cert, err := tls.LoadX509KeyPair(config.Config.TLS.CertFile, config.Config.TLS.KeyFile)
+		if err != nil {
+			return err
+		}
+		ln = tls.NewListener(ln, &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			MinVersion:   tls.VersionTLS12,
+		})
+	}
+
+	return serve(ctx, srv, ln)
 }
