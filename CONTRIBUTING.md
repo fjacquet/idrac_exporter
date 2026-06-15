@@ -1,4 +1,5 @@
 # How to contribute
+
 Contributions to the project are welcome, but please follow the guidelines below.
 
 * Open an issue for all bug reports. Whenever possible, please include the following information.
@@ -8,7 +9,6 @@ Contributions to the project are welcome, but please follow the guidelines below
   * The machine type (vendor and model) that you are trying to export metrics from.
 
   * Relevant data from the Redfish API. When using the `-debug` argument, the exporter will dump all responses from the Redfish API in JSON format.
-
 
 * Code contributions are accepted. However, please open an issue to discuss the changes before submitting the pull request.
 
