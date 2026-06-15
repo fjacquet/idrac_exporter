@@ -43,15 +43,11 @@ func systemHealthHasLabel(fams []*dto.MetricFamily, system string) bool {
 }
 
 func TestLoopCollectOnceDegradesPerHost(t *testing.T) {
-	cfg := config.NewConfig()
-	cfg.Hosts["default"] = &config.AuthConfig{Username: "u", Password: "p", Scheme: "http"}
-	cfg.Hosts["bmc1"] = &config.AuthConfig{Username: "u", Password: "p", Scheme: "http"}
-	cfg.Hosts["bmc2"] = &config.AuthConfig{Username: "u", Password: "p", Scheme: "http"}
-	cfg.Collect.System = true
-	if err := cfg.Validate(); err != nil {
-		t.Fatalf("validate: %v", err)
-	}
-	config.SetConfig(cfg)
+	// testConfig sets the default host and calls Validate+SetConfig; add the
+	// per-target entries after so they appear in the already-valid singleton.
+	testConfig(t, func(c *config.CollectConfig) { c.System = true })
+	config.Config.Hosts["bmc1"] = &config.AuthConfig{Username: "u", Password: "p", Scheme: "http"}
+	config.Config.Hosts["bmc2"] = &config.AuthConfig{Username: "u", Password: "p", Scheme: "http"}
 
 	good := mockRedfish(t, map[string]string{"/redfish/v1/Systems/1": "system.json"})
 	defer good.Close()

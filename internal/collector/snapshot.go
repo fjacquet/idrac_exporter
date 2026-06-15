@@ -34,6 +34,12 @@ func (s *SnapshotStore) Store(snap *Snapshot) {
 }
 
 // Gather implements prometheus.Gatherer.
+// It returns the families slice from the current snapshot directly — no
+// defensive copy is made. Callers MUST NOT mutate the returned slice or any
+// *dto.MetricFamily within it: the snapshot is shared and immutable, and
+// mutation would race with a concurrent Store() swap. If you need to annotate
+// or transform the families, use labelFamilies (which deep-clones them) or
+// build your own copy first.
 func (s *SnapshotStore) Gather() ([]*dto.MetricFamily, error) {
 	snap := s.ptr.Load()
 	if snap == nil {
