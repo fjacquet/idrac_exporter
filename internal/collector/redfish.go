@@ -38,6 +38,16 @@ func NewRedfish(host string, auth *config.AuthConfig) *Redfish {
 	if auth.Port > 0 {
 		baseurl = fmt.Sprintf("%s:%d", baseurl, auth.Port)
 	}
+
+	// Size the connection pool to the configured concurrency when set, so a
+	// bounded fan-out does not open more connections than it can use (#189). The
+	// 10/20 defaults preserve the historical unlimited behavior.
+	maxIdle, maxConns := 10, 20
+	if n := config.Config.Concurrency; n > 0 {
+		maxIdle = int(n)
+		maxConns = int(n) + 1
+	}
+
 	return &Redfish{
 		baseurl:  baseurl,
 		hostname: host,
@@ -50,8 +60,8 @@ func NewRedfish(host string, auth *config.AuthConfig) *Redfish {
 			Transport: &http.Transport{
 				Proxy:                 http.ProxyFromEnvironment,
 				TLSClientConfig:       &tls.Config{InsecureSkipVerify: !auth.Verify, MinVersion: tls.VersionTLS12},
-				MaxIdleConnsPerHost:   10,                                                 // Allow more concurrent requests per host
-				MaxConnsPerHost:       20,                                                 // Limit total connections per host
+				MaxIdleConnsPerHost:   maxIdle,                                            // Sized to concurrency when set
+				MaxConnsPerHost:       maxConns,                                           // Sized to concurrency when set
 				IdleConnTimeout:       30 * time.Second,                                   // Remove stale connections after 30s
 				ResponseHeaderTimeout: time.Duration(config.Config.Timeout) * time.Second, // Timeout waiting for response headers
 				ExpectContinueTimeout: 1 * time.Second,                                    // Timeout for 100-continue responses
