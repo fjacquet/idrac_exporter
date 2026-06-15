@@ -25,7 +25,7 @@ Two reviewable PRs in sequence: **4a infra + refactor** (contract-neutral), **4b
 `go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc` (+ `otlpmetrichttp`),
 `go.opentelemetry.io/contrib/bridges/prometheus`. No codegen tooling is added.
 
-**Bridge fidelity (verified against `bridges/prometheus/producer.go`):** Prometheus gauges → OTel `Gauge`; counters → monotonic cumulative `Sum` (so `idrac_exporter_scrape_errors_total` is correct); metric/label names copied **as-is** (no `_total` stripping); only `UNTYPED`/`GAUGE_HISTOGRAM` are dropped-with-error via `otel.Handle` — and the exporter emits none of those.
+**Bridge fidelity (verified against `bridges/prometheus/producer.go`):** Prometheus gauges → OTel `Gauge`; counters → monotonic cumulative `Sum` (so `idrac_exporter_scrape_errors_total` is correct); metric/label names copied **as-is** (no `_total` stripping). The exporter DOES emit UNTYPED `*_info` and `build_info` metrics; Phase 4 converts them to gauges (constant value 1, labels preserved) in `labelFamilies` before they enter the snapshot, so they are exported faithfully. Only `GAUGE_HISTOGRAM` would be dropped by the bridge, which this exporter never emits.
 
 ---
 
@@ -99,7 +99,7 @@ Three new files in `internal/collector/`, plus lifecycle wiring.
 
 ## Risks
 
-- **Bridge type-mapping surprises** — mitigated by the verified gauge/counter mapping and the dual-export `ManualReader` test asserting OTel types; any `UNTYPED` metric would be dropped, but the exporter emits none.
+- **Bridge type-mapping surprises** — mitigated by the verified gauge/counter mapping and the dual-export `ManualReader` test asserting OTel types; UNTYPED `*_info`/`build_info` metrics are converted to gauges in `labelFamilies` before bridging, so they are exported (not dropped).
 - **Snapshot loop adding BMC load** — the loop is off by default; when on, it polls only configured `hosts:` and coalesces with concurrent on-demand scrapes; `concurrency` bounds the fan-out and conn pool.
 - **Identity-label / dashboard drift** — default `system` differs from the current dashboards' `instance` var; reconciled in Phase 5 (which re-templates dashboards) and softened by the configurable key.
 - **Graceful-shutdown regressions** — the new signal/Shutdown path is covered by a 4a test; the loop and OTLP plug into a single cancel context to avoid leaked goroutines.

@@ -200,14 +200,15 @@ func (c *RootConfig) Validate() error {
 		return fmt.Errorf("parse collection interval: %v", err)
 	}
 	c.Collection.IntervalSeconds = ci.Seconds()
-	if c.OTLP.Interval == "" {
-		c.OTLP.IntervalSeconds = c.Collection.IntervalSeconds
-	} else {
+	if c.OTLP.Interval != "" {
 		oi, err := str2duration.ParseDuration(c.OTLP.Interval)
 		if err != nil {
 			return fmt.Errorf("parse otlp interval: %v", err)
 		}
 		c.OTLP.IntervalSeconds = oi.Seconds()
+	}
+	if c.OTLP.IntervalSeconds == 0 {
+		c.OTLP.IntervalSeconds = c.Collection.IntervalSeconds
 	}
 
 	return nil

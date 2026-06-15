@@ -26,6 +26,9 @@ emitter is rewritten. The on-demand `/metrics?target=` path is unchanged.
 
 A dependency on the contrib Prometheus bridge. The snapshot is gathered
 `MetricFamily` rather than `[]Sample`; the bridge maps gauges → OTel gauges and
-counters → monotonic sums (verified), dropping only `UNTYPED`/`GAUGE_HISTOGRAM`,
-which this exporter never emits. The family `architecture.md` is updated to
-recognize this "prometheus-native bridge" variant of the OTLP export path.
+counters → monotonic sums (verified). The exporter DOES emit UNTYPED `*_info` and
+`build_info` metrics; `labelFamilies` converts them to GAUGE (value preserved,
+labels intact) before they enter the snapshot, so they are exported faithfully via
+OTLP. Only `GAUGE_HISTOGRAM` would be dropped by the bridge, which this exporter
+never emits. The family `architecture.md` is updated to recognize this
+"prometheus-native bridge" variant of the OTLP export path.

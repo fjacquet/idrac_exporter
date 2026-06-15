@@ -28,6 +28,19 @@ func TestOTLPConfigDefaults(t *testing.T) {
 	}
 }
 
+func TestOTLPIntervalZeroInheritsCollection(t *testing.T) {
+	c := NewConfig()
+	c.Hosts["default"] = &AuthConfig{Username: "u", Password: "p"}
+	c.Collection.Interval = "30s"
+	c.OTLP.Interval = "0s"
+	if err := c.Validate(); err != nil {
+		t.Fatalf("validate: %v", err)
+	}
+	if c.OTLP.IntervalSeconds != 30 {
+		t.Errorf("otlp interval = %v, want 30 (inherited from collection)", c.OTLP.IntervalSeconds)
+	}
+}
+
 func TestOTLPConfigInvalidProtocol(t *testing.T) {
 	c := NewConfig()
 	c.Hosts["default"] = &AuthConfig{Username: "u", Password: "p"}

@@ -42,13 +42,25 @@ func (s *SnapshotStore) Gather() ([]*dto.MetricFamily, error) {
 	return snap.families, nil
 }
 
-// labelFamilies returns a deep copy of families with an identity label
-// (key=value) appended to every metric. The source families are never mutated,
-// so the collector's cached gather output stays clean for the on-demand path.
+// labelFamilies returns a deep copy of families ready for the OTLP snapshot: an
+// identity label (key=value) is appended to every metric, and UNTYPED families
+// (the exporter's *_info and build_info metrics) are converted to GAUGE so the
+// OpenTelemetry Prometheus bridge maps them instead of dropping them. The source
+// families are never mutated, so the collector's cached gather output stays clean
+// for the on-demand path.
 func labelFamilies(families []*dto.MetricFamily, key, value string) []*dto.MetricFamily {
 	out := make([]*dto.MetricFamily, 0, len(families))
 	for _, mf := range families {
 		clone := proto.Clone(mf).(*dto.MetricFamily)
+		if clone.GetType() == dto.MetricType_UNTYPED {
+			clone.Type = dto.MetricType_GAUGE.Enum()
+			for _, m := range clone.Metric {
+				if m.Untyped != nil {
+					m.Gauge = &dto.Gauge{Value: proto.Float64(m.Untyped.GetValue())}
+					m.Untyped = nil
+				}
+			}
+		}
 		for _, m := range clone.Metric {
 			m.Label = append(m.Label, &dto.LabelPair{
 				Name:  proto.String(key),

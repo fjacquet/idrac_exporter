@@ -56,6 +56,34 @@ func TestBuildSnapshotMergesByName(t *testing.T) {
 	}
 }
 
+func TestLabelFamiliesConvertsUntypedToGauge(t *testing.T) {
+	src := []*dto.MetricFamily{{
+		Name: proto.String("idrac_system_machine_info"),
+		Type: dto.MetricType_UNTYPED.Enum(),
+		Metric: []*dto.Metric{{
+			Untyped: &dto.Untyped{Value: proto.Float64(1)},
+		}},
+	}}
+	out := labelFamilies(src, "system", "bmc1")
+	if out[0].GetType() != dto.MetricType_GAUGE {
+		t.Fatalf("type = %v, want GAUGE", out[0].GetType())
+	}
+	m := out[0].Metric[0]
+	if m.Untyped != nil {
+		t.Errorf("Untyped not cleared")
+	}
+	if m.Gauge == nil || m.Gauge.GetValue() != 1 {
+		t.Fatalf("gauge value not preserved: %+v", m.Gauge)
+	}
+	if m.Label[0].GetName() != "system" || m.Label[0].GetValue() != "bmc1" {
+		t.Errorf("identity label missing: %+v", m.Label)
+	}
+	// source must be untouched
+	if src[0].GetType() != dto.MetricType_UNTYPED || src[0].Metric[0].Untyped == nil {
+		t.Errorf("source mutated")
+	}
+}
+
 func TestUpFamilyCarriesIdentityLabel(t *testing.T) {
 	testConfig(t, func(c *config.CollectConfig) { c.System = true })
 	mf := upFamily("system", "bmc1", 0)

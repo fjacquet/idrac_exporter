@@ -53,6 +53,11 @@ func TestSnapshotDualExport(t *testing.T) {
 	if !otlpHasMetric(rm, "idrac_up") {
 		t.Fatalf("OTLP path: idrac_up missing")
 	}
+	// build_info is UNTYPED at the source; it must be converted to a gauge and
+	// therefore reach OTLP (not be dropped by the bridge).
+	if !otlpHasMetric(rm, "idrac_exporter_build_info") {
+		t.Fatalf("OTLP path: idrac_exporter_build_info missing (UNTYPED not converted)")
+	}
 }
 
 func mustGather(t *testing.T, store *SnapshotStore) []*dto.MetricFamily {
