@@ -1,4 +1,14 @@
 # iDRAC Exporter
+
+[![CI](https://github.com/fjacquet/idrac_exporter/actions/workflows/ci.yml/badge.svg)](https://github.com/fjacquet/idrac_exporter/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/fjacquet/idrac_exporter?include_prereleases&sort=semver)](https://github.com/fjacquet/idrac_exporter/releases)
+[![Go Report Card](https://goreportcard.com/badge/github.com/fjacquet/idrac_exporter)](https://goreportcard.com/report/github.com/fjacquet/idrac_exporter)
+[![Go version](https://img.shields.io/github/go-mod/go-version/fjacquet/idrac_exporter)](go.mod)
+[![License](https://img.shields.io/github/license/fjacquet/idrac_exporter)](LICENSE)
+[![Docs](https://img.shields.io/badge/docs-mkdocs-blue)](https://fjacquet.github.io/idrac_exporter)
+
+_Forked from [mrlhansen/idrac_exporter](https://github.com/mrlhansen/idrac_exporter)._
+
 This is a simple Redfish (iDRAC, iLO, XClarity) exporter for [Prometheus](https://prometheus.io). The exporter uses the Redfish API to collect information and it supports the regular `/metrics` endpoint to expose metrics from the host passed via the `target` parameter. For example, to scrape metrics from a Redfish instance on the IP address `192.168.1.1` call the following URL address.
 
 ```text
@@ -21,7 +31,7 @@ The program supports several different systems, because they all follow the Redf
 The exporter is written in [Go](https://golang.org) and it can be downloaded and compiled using:
 
 ```sh
-git clone https://github.com/mrlhansen/idrac_exporter.git
+git clone https://github.com/fjacquet/idrac_exporter.git
 cd idrac_exporter
 make
 ```
@@ -39,7 +49,7 @@ docker build -t idrac_exporter .
 There are also pre-built images available. To download these images, simply use the following command.
 
 ```sh
-docker pull ghcr.io/mrlhansen/idrac_exporter
+docker pull ghcr.io/fjacquet/idrac_exporter
 ```
 
 Remember to set the listen address to `0.0.0.0` when running inside a container.
@@ -48,7 +58,7 @@ Remember to set the listen address to `0.0.0.0` when running inside a container.
 There is also an official [Helm](https://helm.sh/docs/) chart for installing the exporter in a Kubernetes cluster.
 
 ```sh
-helm repo add idrac-exporter https://mrlhansen.github.io/idrac_exporter
+helm repo add idrac-exporter https://fjacquet.github.io/idrac_exporter
 helm install idrac-exporter idrac-exporter/idrac-exporter
 ```
 
