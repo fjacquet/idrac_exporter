@@ -4,6 +4,9 @@ import (
 	"runtime"
 	"sync/atomic"
 	"testing"
+
+	"github.com/fjacquet/idrac_exporter/internal/config"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // TestRunLimitedBoundsConcurrency asserts SetLimit(n) is honoured: with 8 tasks
@@ -85,5 +88,26 @@ func TestRefreshSuccessNoError(t *testing.T) {
 	c.refresh("ok", func() bool { return true })
 	if got := c.errors.Load(); got != 0 {
 		t.Fatalf("errors = %d, want 0 on success", got)
+	}
+}
+
+// TestDescribeIsUnchecked asserts the collector is unchecked: Describe sends no
+// descriptors (the metric name set is dynamic). Metric output is unaffected.
+func TestDescribeIsUnchecked(t *testing.T) {
+	// Initialize config so NewCollector can succeed.
+	testConfig(t, func(c *config.CollectConfig) { c.System = true })
+
+	mc := NewCollector()
+	ch := make(chan *prometheus.Desc)
+	go func() {
+		mc.Describe(ch)
+		close(ch)
+	}()
+	count := 0
+	for range ch {
+		count++
+	}
+	if count != 0 {
+		t.Fatalf("Describe emitted %d descriptors, want 0 (unchecked collector)", count)
 	}
 }

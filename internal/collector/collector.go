@@ -501,77 +501,10 @@ func NewCollector() *Collector {
 }
 
 func (collector *Collector) Describe(ch chan<- *prometheus.Desc) {
-	ch <- collector.ExporterBuildInfo
-	ch <- collector.ExporterScrapeErrorsTotal
-	ch <- collector.SystemPowerOn
-	ch <- collector.SystemHealth
-	ch <- collector.SystemIndicatorLED
-	ch <- collector.SystemIndicatorActive
-	ch <- collector.SystemMemorySize
-	ch <- collector.SystemCpuCount
-	ch <- collector.SystemBiosInfo
-	ch <- collector.SystemMachineInfo
-	ch <- collector.SensorsTemperature
-	ch <- collector.SensorsFanHealth
-	ch <- collector.SensorsFanSpeed
-	ch <- collector.SensorsVoltage
-	ch <- collector.PowerSupplyHealth
-	ch <- collector.PowerSupplyOutputWatts
-	ch <- collector.PowerSupplyInputWatts
-	ch <- collector.PowerSupplyCapacityWatts
-	ch <- collector.PowerSupplyInputVoltage
-	ch <- collector.PowerSupplyEfficiencyPercent
-	ch <- collector.PowerControlConsumedWatts
-	ch <- collector.PowerControlCapacityWatts
-	ch <- collector.PowerControlMinConsumedWatts
-	ch <- collector.PowerControlMaxConsumedWatts
-	ch <- collector.PowerControlAvgConsumedWatts
-	ch <- collector.PowerControlInterval
-	ch <- collector.EventLogEntry
-	ch <- collector.StorageInfo
-	ch <- collector.StorageHealth
-	ch <- collector.StorageDriveInfo
-	ch <- collector.StorageDriveHealth
-	ch <- collector.StorageDriveCapacity
-	ch <- collector.StorageDriveLifeLeft
-	ch <- collector.StorageDriveIndicatorActive
-	ch <- collector.StorageControllerInfo
-	ch <- collector.StorageControllerHealth
-	ch <- collector.StorageControllerSpeed
-	ch <- collector.StorageControllerCacheSize
-	ch <- collector.StorageControllerCacheHealth
-	ch <- collector.StorageVolumeInfo
-	ch <- collector.StorageVolumeHealth
-	ch <- collector.StorageVolumeMediaSpan
-	ch <- collector.StorageVolumeCapacity
-	ch <- collector.MemoryModuleInfo
-	ch <- collector.MemoryModuleHealth
-	ch <- collector.MemoryModuleCapacity
-	ch <- collector.MemoryModuleSpeed
-	ch <- collector.NetworkAdapterInfo
-	ch <- collector.NetworkAdapterHealth
-	ch <- collector.NetworkPortHealth
-	ch <- collector.NetworkPortMaxSpeed
-	ch <- collector.NetworkPortCurrentSpeed
-	ch <- collector.NetworkPortLinkUp
-	ch <- collector.CpuInfo
-	ch <- collector.CpuHealth
-	ch <- collector.CpuVoltage
-	ch <- collector.CpuMaxSpeed
-	ch <- collector.CpuCurrentSpeed
-	ch <- collector.CpuTotalCores
-	ch <- collector.CpuTotalThreads
-	ch <- collector.ManagerInfo
-	ch <- collector.ManagerHealth
-	ch <- collector.DellBatteryRollupHealth
-	ch <- collector.DellEstimatedSystemAirflowCFM
-	ch <- collector.DellControllerBatteryHealth
-	ch <- collector.PduInfo
-	ch <- collector.PduHealth
-	ch <- collector.PduPowerWatts
-	ch <- collector.PduPowerApparentVA
-	ch <- collector.PduPowerFactor
-	ch <- collector.PduEnergyKWh
+	// Unchecked collector: the emitted metric name set is built dynamically with
+	// variable labels, so no descriptors are advertised at registration time. The
+	// same metrics are still produced by Collect; only registration-time descriptor
+	// validation is dropped. See Phase 2 plumbing spec §2c.
 }
 
 // runLimited runs each task in its own goroutine, bounding concurrency to limit
