@@ -25,7 +25,7 @@
           "uid": "${datasource}"
         },
         "enable": true,
-        "expr": "last_over_time(idrac_events_log_entry{job=~\"$job\", instance=~\"$instance\"}[$__interval] offset -$__interval) * 1000 < ${__to}\nand \nlast_over_time(idrac_events_log_entry{job=~\"$job\", instance=~\"$instance\"}[$__interval] offset -$__interval) * 1000 > ${__from}",
+        "expr": "last_over_time(idrac_events_log_entry{system=~\"$system\"}[$__interval] offset -$__interval) * 1000 < ${__to}\nand \nlast_over_time(idrac_events_log_entry{system=~\"$system\"}[$__interval] offset -$__interval) * 1000 > ${__from}",
         "iconColor": "purple",
         "name": "Events",
         "tagKeys": "instance,severity",
@@ -164,7 +164,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "idrac_system_health{instance=~\"$instance\", job=~\"$job\"}",
+          "expr": "idrac_system_health{system=~\"$system\"}",
           "format": "table",
           "instant": true,
           "legendFormat": "{{status}}",
@@ -266,7 +266,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "idrac_system_bios_info{instance=\"$instance\", job=~\"$job\"}",
+          "expr": "idrac_system_bios_info{system=~\"$system\"}",
           "format": "time_series",
           "instant": true,
           "legendFormat": "{{version}}",
@@ -478,7 +478,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "idrac_memory_module_info{job=~\"$job\", instance=~\"$instance\"}",
+          "expr": "idrac_memory_module_info{system=~\"$system\"}",
           "format": "table",
           "instant": false,
           "range": true,
@@ -490,7 +490,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "idrac_memory_module_health{job=~\"$job\", instance=~\"$instance\"}",
+          "expr": "idrac_memory_module_health{system=~\"$system\"}",
           "format": "table",
           "hide": false,
           "instant": false,
@@ -503,7 +503,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "idrac_memory_module_capacity_bytes{job=~\"$job\", instance=~\"$instance\"}",
+          "expr": "idrac_memory_module_capacity_bytes{system=~\"$system\"}",
           "format": "table",
           "hide": false,
           "instant": false,
@@ -516,7 +516,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "idrac_memory_module_speed_mhz{job=~\"$job\", instance=~\"$instance\"}",
+          "expr": "idrac_memory_module_speed_mhz{system=~\"$system\"}",
           "format": "table",
           "hide": false,
           "instant": false,
@@ -641,7 +641,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "idrac_system_machine_info{instance=\"$instance\", job=~\"$job\"}",
+          "expr": "idrac_system_machine_info{system=~\"$system\"}",
           "format": "table",
           "instant": true,
           "legendFormat": "{{manufacturer}}",
@@ -798,7 +798,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "idrac_system_memory_size_bytes{instance=\"$instance\", job=~\"$job\"}",
+          "expr": "idrac_system_memory_size_bytes{system=~\"$system\"}",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -1027,7 +1027,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "idrac_system_cpu_count{instance=\"$instance\", job=~\"$job\"}",
+          "expr": "idrac_system_cpu_count{system=~\"$system\"}",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -1116,7 +1116,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "count(idrac_storage_drive_info{instance=\"$instance\", job=~\"$job\"})",
+          "expr": "count(idrac_storage_drive_info{system=~\"$system\"})",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -1219,7 +1219,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "idrac_system_indicator_led_on{instance=\"$instance\", job=~\"$job\"}",
+          "expr": "idrac_system_indicator_led_on{system=~\"$system\"}",
           "format": "time_series",
           "instant": true,
           "legendFormat": "{{state}}",
@@ -1323,7 +1323,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "idrac_system_power_on{instance=\"$instance\", job=~\"$job\"}",
+          "expr": "idrac_system_power_on{system=~\"$system\"}",
           "instant": true,
           "legendFormat": "",
           "metrics": [
@@ -1518,7 +1518,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "idrac_storage_drive_info{job=~\"$job\", instance=~\"$instance\"}",
+          "expr": "idrac_storage_drive_info{system=~\"$system\"}",
           "format": "table",
           "instant": false,
           "range": true,
@@ -1530,7 +1530,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "idrac_storage_drive_health{job=~\"$job\", instance=~\"$instance\"}",
+          "expr": "idrac_storage_drive_health{system=~\"$system\"}",
           "format": "table",
           "hide": false,
           "instant": false,
@@ -1543,7 +1543,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "idrac_storage_drive_capacity_bytes{job=~\"$job\", instance=~\"$instance\"}",
+          "expr": "idrac_storage_drive_capacity_bytes{system=~\"$system\"}",
           "format": "table",
           "hide": false,
           "instant": false,
@@ -1773,7 +1773,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "idrac_network_port_health{job=~\"$job\", instance=~\"$instance\"}",
+          "expr": "idrac_network_port_health{system=~\"$system\"}",
           "format": "table",
           "instant": false,
           "range": true,
@@ -1785,7 +1785,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "idrac_network_port_link_up{job=~\"$job\", instance=~\"$instance\"}",
+          "expr": "idrac_network_port_link_up{system=~\"$system\"}",
           "format": "table",
           "hide": false,
           "instant": false,
@@ -1798,7 +1798,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "idrac_network_port_current_speed_mbps{job=~\"$job\", instance=~\"$instance\"}",
+          "expr": "idrac_network_port_current_speed_mbps{system=~\"$system\"}",
           "format": "table",
           "hide": false,
           "instant": false,
@@ -1811,7 +1811,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "idrac_network_adapter_health{job=~\"$job\", instance=~\"$instance\"}",
+          "expr": "idrac_network_adapter_health{system=~\"$system\"}",
           "format": "table",
           "hide": false,
           "instant": false,
@@ -1979,7 +1979,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "avg_over_time(idrac_sensors_temperature{instance=~\"$instance\",job=~\"$job\"}[$__rate_interval])",
+          "expr": "avg_over_time(idrac_sensors_temperature{system=~\"$system\"}[$__rate_interval])",
           "instant": false,
           "legendFormat": "{{name}}",
           "metrics": [
@@ -2095,7 +2095,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "avg_over_time(idrac_sensors_fan_speed{instance=~\"$instance\",job=~\"$job\"}[$__rate_interval])",
+          "expr": "avg_over_time(idrac_sensors_fan_speed{system=~\"$system\"}[$__rate_interval])",
           "instant": false,
           "legendFormat": "{{name}}",
           "metrics": [
@@ -2234,7 +2234,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "avg_over_time(idrac_power_supply_output_watts{instance=~\"$instance\",job=~\"$job\"}[$__rate_interval])",
+          "expr": "avg_over_time(idrac_power_supply_output_watts{system=~\"$system\"}[$__rate_interval])",
           "legendFormat": "Output PSU-{{id}}",
           "metrics": [
             {
@@ -2253,7 +2253,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "avg_over_time(idrac_power_supply_input_watts{instance=~\"$instance\",job=~\"$job\"}[$__rate_interval])",
+          "expr": "avg_over_time(idrac_power_supply_input_watts{system=~\"$system\"}[$__rate_interval])",
           "hide": false,
           "legendFormat": "Input PSU-{{id}}",
           "range": true,
@@ -2330,7 +2330,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "avg(idrac_power_supply_input_voltage{instance=~\"$instance\", job=~\"$job\"})",
+          "expr": "avg(idrac_power_supply_input_voltage{system=~\"$system\"})",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -2446,7 +2446,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "avg_over_time(idrac_power_control_avg_consumed_watts{instance=~\"$instance\",job=~\"$job\"}[$__rate_interval])",
+          "expr": "avg_over_time(idrac_power_control_avg_consumed_watts{system=~\"$system\"}[$__rate_interval])",
           "legendFormat": "{{name}}",
           "metrics": [
             {
@@ -2530,7 +2530,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "idrac_power_control_capacity_watts{id=\"0\",instance=~\"$instance\", job=~\"$job\"}",
+          "expr": "idrac_power_control_capacity_watts{id=\"0\",system=~\"$system\"}",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -2704,7 +2704,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "last_over_time(idrac_events_log_entry{job=~\"$job\", instance=~\"$instance\"}[$__interval] offset -$__interval) * 1000 < ${__to}\nand \nlast_over_time(idrac_events_log_entry{job=~\"$job\", instance=~\"$instance\"}[$__interval] offset -$__interval) * 1000 > ${__from}",
+          "expr": "last_over_time(idrac_events_log_entry{system=~\"$system\"}[$__interval] offset -$__interval) * 1000 < ${__to}\nand \nlast_over_time(idrac_events_log_entry{system=~\"$system\"}[$__interval] offset -$__interval) * 1000 > ${__from}",
           "format": "table",
           "instant": false,
           "interval": "1",
@@ -2794,6 +2794,843 @@
         }
       ],
       "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 47
+      },
+      "id": 35,
+      "panels": [],
+      "title": "Management \u00b7 Storage \u00b7 Power detail",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "OK"
+                },
+                "1": {
+                  "color": "yellow",
+                  "index": 1,
+                  "text": "Warning"
+                },
+                "2": {
+                  "color": "red",
+                  "index": 2,
+                  "text": "Critical"
+                }
+              },
+              "type": "value"
+            },
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "index": 3,
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 48
+      },
+      "id": 36,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "idrac_manager_health{system=~\"$system\"}",
+          "format": "time_series",
+          "instant": false,
+          "legendFormat": "{{id}} ({{status}})",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Manager Health",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 18,
+        "x": 6,
+        "y": 48
+      },
+      "id": 37,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "idrac_manager_info{system=~\"$system\"}",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Manager Info",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "pattern": "(id|type|model|firmware)"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "status"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "Critical": {
+                        "color": "light-red",
+                        "index": 2
+                      },
+                      "OK": {
+                        "color": "light-green",
+                        "index": 0
+                      },
+                      "Warning": {
+                        "color": "light-yellow",
+                        "index": 1
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 52
+      },
+      "id": 38,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "idrac_storage_controller_health{system=~\"$system\"}",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "HEALTH"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "idrac_storage_controller_cache_health{system=~\"$system\"}",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "CACHE"
+        }
+      ],
+      "title": "Storage Controller Health",
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "id",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "pattern": "(id|storage_id|status)"
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "Value #HEALTH": "Controller Status",
+              "Value #CACHE": "Cache Status"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "status"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "Critical": {
+                        "color": "light-red",
+                        "index": 2
+                      },
+                      "OK": {
+                        "color": "light-green",
+                        "index": 0
+                      },
+                      "Warning": {
+                        "color": "light-yellow",
+                        "index": 1
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Capacity"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 52
+      },
+      "id": 39,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "idrac_storage_volume_health{system=~\"$system\"}",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "HEALTH"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "idrac_storage_volume_capacity_bytes{system=~\"$system\"}",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "CAP"
+        }
+      ],
+      "title": "Storage Volumes",
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "id",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "pattern": "(id|storage_id|status|Value #CAP)"
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "Value #CAP": "Capacity"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "volt"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 58
+      },
+      "id": 40,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "idrac_sensors_voltage{system=~\"$system\"}",
+          "format": "time_series",
+          "instant": false,
+          "legendFormat": "{{name}} ({{id}})",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "idrac_cpu_voltage{system=~\"$system\"}",
+          "format": "time_series",
+          "instant": false,
+          "legendFormat": "CPU {{id}}",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Voltage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "watt"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "EFF"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 58
+      },
+      "id": 41,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "idrac_power_supply_capacity_watts{system=~\"$system\"}",
+          "format": "time_series",
+          "instant": false,
+          "legendFormat": "Capacity PSU {{id}} (W)",
+          "range": true,
+          "refId": "CAP"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "idrac_power_supply_efficiency_percent{system=~\"$system\"}",
+          "format": "time_series",
+          "instant": false,
+          "legendFormat": "Efficiency PSU {{id}} (%)",
+          "range": true,
+          "refId": "EFF"
+        }
+      ],
+      "title": "PSU Capacity & Efficiency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "watt"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 66
+      },
+      "id": 42,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "idrac_power_control_min_consumed_watts{system=~\"$system\"}",
+          "format": "time_series",
+          "instant": false,
+          "legendFormat": "Min {{name}} ({{id}})",
+          "range": true,
+          "refId": "MIN"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "idrac_power_control_max_consumed_watts{system=~\"$system\"}",
+          "format": "time_series",
+          "instant": false,
+          "legendFormat": "Max {{name}} ({{id}})",
+          "range": true,
+          "refId": "MAX"
+        }
+      ],
+      "title": "Power Control Min/Max Consumed",
+      "type": "timeseries"
     }
   ],
   "refresh": "30s",
@@ -2821,52 +3658,25 @@
         "type": "datasource"
       },
       {
-        "allValue": "",
-        "current": {
-          "selected": true,
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
         "datasource": {
           "type": "prometheus",
           "uid": "${datasource}"
         },
-        "definition": "label_values(idrac_system_machine_info,job)",
+        "definition": "label_values(idrac_system_machine_info, system)",
         "hide": 0,
         "includeAll": true,
-        "label": "job",
+        "label": "System",
         "multi": true,
-        "name": "job",
+        "name": "system",
         "options": [],
-        "query": "label_values(idrac_system_machine_info,job)",
-        "refresh": 1,
+        "query": {
+          "query": "label_values(idrac_system_machine_info, system)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
         "sort": 1,
-        "type": "query"
-      },
-      {
-        "allValue": ".+",
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${datasource}"
-        },
-        "definition": "label_values(idrac_system_machine_info{job=~\"$job\"},instance)",
-        "hide": 0,
-        "includeAll": false,
-        "label": "",
-        "multi": false,
-        "name": "instance",
-        "options": [],
-        "query": "label_values(idrac_system_machine_info{job=~\"$job\"},instance)",
-        "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 3,
         "type": "query"
       }
     ]
