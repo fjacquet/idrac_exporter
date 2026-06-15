@@ -11,8 +11,8 @@ import (
 	"github.com/fjacquet/idrac_exporter/internal/log"
 	"github.com/fjacquet/idrac_exporter/internal/version"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/expfmt"
 	dto "github.com/prometheus/client_model/go"
+	"github.com/prometheus/common/expfmt"
 	"golang.org/x/sync/errgroup"
 )
 
