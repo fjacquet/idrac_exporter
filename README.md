@@ -55,11 +55,10 @@ docker pull ghcr.io/fjacquet/idrac_exporter
 Remember to set the listen address to `0.0.0.0` when running inside a container.
 
 ### Helm Chart
-There is also an official [Helm](https://helm.sh/docs/) chart for installing the exporter in a Kubernetes cluster.
+There is also a [Helm](https://helm.sh/docs/) chart for installing the exporter in a Kubernetes cluster. It is published as an OCI artifact on GHCR.
 
 ```sh
-helm repo add idrac-exporter https://fjacquet.github.io/idrac_exporter
-helm install idrac-exporter idrac-exporter/idrac-exporter
+helm install idrac-exporter oci://ghcr.io/fjacquet/charts/idrac-exporter
 ```
 
 
