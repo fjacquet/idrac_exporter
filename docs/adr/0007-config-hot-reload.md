@@ -7,7 +7,7 @@ Accepted — extended in Phase 2.
 ## Context
 
 The exporter already supports reload via an HTTP `/reload` endpoint and an optional
-`fsnotify` file watcher (`-config-watch`). The family standard is a thread-safe
+`fsnotify` file watcher (`--config-watch`). The family standard is a thread-safe
 rebuild-and-swap reload triggered by **both SIGHUP and a file watch**. The current watcher
 also misses atomic-rename-on-save (editors write a temp file then rename), which upstream
 PR #148 set out to fix.

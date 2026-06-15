@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted — transport migration to `resty/v2` in Phase 2.
+Accepted — transport migration to `resty/v2` in Phase 3 (paired with the payload realignment that already reworks the client and response structs).
 
 ## Context
 
