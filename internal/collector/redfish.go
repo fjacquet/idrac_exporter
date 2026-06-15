@@ -242,6 +242,10 @@ func (r *Redfish) Get(path string, res any) bool {
 		return false
 	}
 
+	if config.Trace {
+		log.Info("trace: GET %s -> %d", path, resp.StatusCode)
+	}
+
 	if resp.StatusCode != http.StatusOK {
 		log.Error("Unexpected status code from %q: %s", url, resp.Status)
 		return false
@@ -293,6 +297,10 @@ func (r *Redfish) Exists(path string) bool {
 	}
 	if err != nil {
 		return false
+	}
+
+	if config.Trace {
+		log.Info("trace: HEAD %s -> %d", path, resp.StatusCode)
 	}
 
 	if resp.StatusCode >= 400 && resp.StatusCode <= 499 {
