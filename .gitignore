@@ -16,7 +16,6 @@ sbom.json
 .env
 *.local.yaml
 /config.yml
-/config.yaml
 .claude.local.md
 .claude/settings.local.json
 

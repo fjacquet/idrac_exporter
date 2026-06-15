@@ -1,0 +1,19 @@
+# Source-of-truth config for the docker-compose demo stack.
+# Secrets come from the environment (compose sets IDRAC1_*; .env is gitignored).
+# ${VAR} references are expanded at load time. config.yaml is the way; .env is nice.
+address: 0.0.0.0
+port: 9348
+timeout: 60 # BMC Redfish calls can be slow
+
+# The BMC scraped when /metrics is called without a ?target= parameter.
+# For a fleet, omit this and use the Prometheus relabel pattern (see README) so a
+# single exporter serves many targets via /metrics?target=<bmc>.
+default_target: ${IDRAC1_HOST}
+
+hosts:
+  default:
+    username: ${IDRAC1_USERNAME}
+    password: ${IDRAC1_PASSWORD}
+
+metrics:
+  all: true

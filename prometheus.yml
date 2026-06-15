@@ -1,0 +1,17 @@
+global:
+  # BMC Redfish scrapes are slow; give them headroom. Tune per hardware.
+  scrape_interval: 60s
+  scrape_timeout: 55s
+
+rule_files:
+  - /etc/prometheus/idrac.rules.yml
+
+scrape_configs:
+  # Single-target quickstart: the exporter scrapes its `default_target`, so
+  # Prometheus hits /metrics directly. For a fleet, replace this with the
+  # multi-target relabel pattern from the README (one entry per BMC, rewriting
+  # __param_target -> idrac_exporter:9348).
+  - job_name: idrac
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["idrac_exporter:9348"]

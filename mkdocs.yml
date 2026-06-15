@@ -36,6 +36,9 @@ exclude_docs: |
 
 nav:
   - Home: index.md
+  - Deployment:
+      - Docker Compose: deployment/docker.md
+  - Dashboards: dashboards.md
   - Architecture Decisions:
       - Overview: adr/index.md
       - 0001 Supply-chain hardening: adr/0001-supply-chain-hardening.md

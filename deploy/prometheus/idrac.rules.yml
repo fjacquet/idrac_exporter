@@ -1,0 +1,58 @@
+# Starter alert rules for idrac_exporter. Thresholds are tunable defaults.
+# Health metrics map: 0 = OK, 1 = Warning, 2 = Critical.
+groups:
+  - name: idrac-health
+    rules:
+      - alert: IdracExporterTargetDown
+        expr: up{job="idrac"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "iDRAC exporter scrape is down ({{ $labels.instance }})"
+          description: "Prometheus cannot scrape idrac_exporter. Check the target BMC reachability and credentials."
+
+      - alert: IdracSystemUnhealthy
+        expr: idrac_system_health > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "iDRAC system health degraded ({{ $labels.status }})"
+          description: "System health={{ $value }} (1=Warning, 2=Critical)."
+
+      - alert: IdracPowerSupplyUnhealthy
+        expr: idrac_power_supply_health > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Power supply {{ $labels.id }} unhealthy"
+          description: "PSU health={{ $value }} (1=Warning, 2=Critical)."
+
+      - alert: IdracFanUnhealthy
+        expr: idrac_sensors_fan_health > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Fan {{ $labels.name }} unhealthy"
+          description: "Fan health={{ $value }} (1=Warning, 2=Critical)."
+
+      - alert: IdracStorageDriveFailed
+        expr: idrac_storage_drive_health >= 2
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Storage drive {{ $labels.id }} failed"
+          description: "Drive health={{ $value }} (2=Critical). See idrac_storage_drive_info."
+
+      - alert: IdracScrapeErrors
+        expr: increase(idrac_exporter_scrape_errors_total[15m]) > 0
+        for: 5m
+        labels:
+          severity: info
+        annotations:
+          summary: "iDRAC exporter scrape errors ({{ $labels.instance }})"
+          description: "{{ $value }} Redfish scrape errors in the last 15m."

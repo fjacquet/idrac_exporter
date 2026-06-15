@@ -1,0 +1,12 @@
+# Grafana dashboard provisioning for the docker-compose test stack.
+# Loads the bundled iDRAC dashboards from disk on startup.
+apiVersion: 1
+
+providers:
+  - name: iDRAC
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards
