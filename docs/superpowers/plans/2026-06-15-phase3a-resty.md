@@ -4,7 +4,7 @@
 
 **Goal:** Reimplement the Redfish HTTP transport in `internal/collector/redfish.go` on `github.com/go-resty/resty/v2`, preserving every existing behavior and adding bounded retry for idempotent GET/HEAD only — without changing metric output.
 
-**Architecture:** A per-host `*resty.Client` (built in `NewRedfish`) replaces the hand-built `*http.Client`. The client keeps the exact same custom `*http.Transport` (proxy, TLS `InsecureSkipVerify`/min-1.2, the 2c concurrency-sized conn pool, the timeouts) via `SetTransport`, plus `SetRetryCount(2)` and one `AddRetryCondition`. The condition retries only `GET`/`HEAD` on a transport error or a `>= 500` status, and returns false for everything else — so a `4xx` is never retried and the session-create `POST` is never retried (avoiding duplicate BMC sessions). All session quirks (the `405` → `/Sessions` fallback, the iLO 4 `Location` session id, `\r` stripping, token-safe `--trace` logging, basic-auth fallback) are preserved verbatim.
+**Architecture:** A per-host `*resty.Client` (built in `NewRedfish`) replaces the hand-built `*http.Client`. The client keeps the same custom `*http.Transport` (proxy, TLS `InsecureSkipVerify`/min-1.2, the 2c concurrency-sized conn pool, the timeouts) via `SetTransport`, plus `SetRetryCount(2)` and one `AddRetryCondition`. The condition retries only `GET`/`HEAD` on a transport error or a `>= 500` status, and returns false for everything else — so a `4xx` is never retried and the session-create `POST` is never retried (avoiding duplicate BMC sessions). All session quirks (the `405` → `/Sessions` fallback, the iLO 4 `Location` session id, `\r` stripping, token-safe `--trace` logging, basic-auth fallback) are preserved verbatim.
 
 **Tech Stack:** Go 1.26.4, `github.com/go-resty/resty/v2`, existing `internal/collector` httptest harness.
 
@@ -213,6 +213,9 @@ func NewRedfish(host string, auth *config.AuthConfig) *Redfish {
 	client := resty.New().
 		SetTransport(transport).
 		SetTimeout(time.Duration(config.Config.Timeout) * time.Second).
+		// BMCs are reached over insecure transport by design, so resty's
+		// per-request basic-auth-over-HTTP warning would be log spam.
+		SetDisableWarn(true).
 		SetRetryCount(2).
 		SetRetryWaitTime(200 * time.Millisecond).
 		SetRetryMaxWaitTime(1 * time.Second).
