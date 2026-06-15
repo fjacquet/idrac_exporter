@@ -15,6 +15,7 @@
 ---
 
 ## File structure
+
 - `internal/collector/redfish.go` — **rewrite** the transport onto resty (struct field, `NewRedfish`, `Get`, `Exists`, `CreateSession`, `RefreshSession`, `DeleteSession`, add `retryIdempotent`).
 - `internal/collector/redfish_resty_test.go` — **create** new behavior tests (retry-on-5xx, no-retry-on-4xx, session-POST-issued-once).
 - `go.mod` / `go.sum` — **modify** add `github.com/go-resty/resty/v2`.
@@ -25,6 +26,7 @@
 ## Task 1: migrate redfish.go onto resty/v2
 
 **Files:**
+
 - Test: `internal/collector/redfish_resty_test.go` (create)
 - Modify: `internal/collector/redfish.go` (rewrite)
 - Modify: `go.mod`, `go.sum`
@@ -35,89 +37,89 @@
 package collector
 
 import (
-	"net/http"
-	"net/http/httptest"
-	"strings"
-	"sync/atomic"
-	"testing"
+ "net/http"
+ "net/http/httptest"
+ "strings"
+ "sync/atomic"
+ "testing"
 
-	"github.com/fjacquet/idrac_exporter/internal/config"
+ "github.com/fjacquet/idrac_exporter/internal/config"
 )
 
 func newTestRedfish(t *testing.T, srv *httptest.Server, basicAuth bool) *Redfish {
-	t.Helper()
-	host := strings.TrimPrefix(srv.URL, "http://")
-	return NewRedfish(host, &config.AuthConfig{
-		Scheme: "http", Username: "u", Password: "p", BasicAuth: basicAuth,
-	})
+ t.Helper()
+ host := strings.TrimPrefix(srv.URL, "http://")
+ return NewRedfish(host, &config.AuthConfig{
+  Scheme: "http", Username: "u", Password: "p", BasicAuth: basicAuth,
+ })
 }
 
 // TestGetRetriesTransient: a GET that returns 503 then 200 is retried and succeeds.
 func TestGetRetriesTransient(t *testing.T) {
-	installConfig(t, 0)
-	var attempts atomic.Int32
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		if attempts.Add(1) == 1 {
-			w.WriteHeader(http.StatusServiceUnavailable)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"ok":true}`))
-	}))
-	defer srv.Close()
+ installConfig(t, 0)
+ var attempts atomic.Int32
+ srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+  if attempts.Add(1) == 1 {
+   w.WriteHeader(http.StatusServiceUnavailable)
+   return
+  }
+  w.Header().Set("Content-Type", "application/json")
+  _, _ = w.Write([]byte(`{"ok":true}`))
+ }))
+ defer srv.Close()
 
-	r := newTestRedfish(t, srv, true) // basic auth → no session needed
-	var out map[string]any
-	if !r.Get("/redfish/v1/test", &out) {
-		t.Fatal("Get should succeed after one retry")
-	}
-	if got := attempts.Load(); got != 2 {
-		t.Fatalf("attempts = %d, want 2 (one retry)", got)
-	}
+ r := newTestRedfish(t, srv, true) // basic auth → no session needed
+ var out map[string]any
+ if !r.Get("/redfish/v1/test", &out) {
+  t.Fatal("Get should succeed after one retry")
+ }
+ if got := attempts.Load(); got != 2 {
+  t.Fatalf("attempts = %d, want 2 (one retry)", got)
+ }
 }
 
 // TestGetDoesNotRetry4xx: a GET that returns 404 is not retried.
 func TestGetDoesNotRetry4xx(t *testing.T) {
-	installConfig(t, 0)
-	var attempts atomic.Int32
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		attempts.Add(1)
-		w.WriteHeader(http.StatusNotFound)
-	}))
-	defer srv.Close()
+ installConfig(t, 0)
+ var attempts atomic.Int32
+ srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+  attempts.Add(1)
+  w.WriteHeader(http.StatusNotFound)
+ }))
+ defer srv.Close()
 
-	r := newTestRedfish(t, srv, true)
-	var out map[string]any
-	if r.Get("/redfish/v1/test", &out) {
-		t.Fatal("Get should fail on 404")
-	}
-	if got := attempts.Load(); got != 1 {
-		t.Fatalf("attempts = %d, want 1 (no retry on 4xx)", got)
-	}
+ r := newTestRedfish(t, srv, true)
+ var out map[string]any
+ if r.Get("/redfish/v1/test", &out) {
+  t.Fatal("Get should fail on 404")
+ }
+ if got := attempts.Load(); got != 1 {
+  t.Fatalf("attempts = %d, want 1 (no retry on 4xx)", got)
+ }
 }
 
 // TestCreateSessionPostNotRetried: the session-create POST is issued exactly once,
 // even on a 500 (a retried POST could create duplicate BMC sessions).
 func TestCreateSessionPostNotRetried(t *testing.T) {
-	installConfig(t, 0)
-	var posts atomic.Int32
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if req.Method == http.MethodPost {
-			posts.Add(1)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		w.WriteHeader(http.StatusNotFound)
-	}))
-	defer srv.Close()
+ installConfig(t, 0)
+ var posts atomic.Int32
+ srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+  if req.Method == http.MethodPost {
+   posts.Add(1)
+   w.WriteHeader(http.StatusInternalServerError)
+   return
+  }
+  w.WriteHeader(http.StatusNotFound)
+ }))
+ defer srv.Close()
 
-	r := newTestRedfish(t, srv, false) // session enabled
-	if r.CreateSession() {
-		t.Fatal("CreateSession should fail on 500")
-	}
-	if got := posts.Load(); got != 1 {
-		t.Fatalf("session POSTs = %d, want 1 (POST must not retry)", got)
-	}
+ r := newTestRedfish(t, srv, false) // session enabled
+ if r.CreateSession() {
+  t.Fatal("CreateSession should fail on 500")
+ }
+ if got := posts.Load(); got != 1 {
+  t.Fatalf("session POSTs = %d, want 1 (POST must not retry)", got)
+ }
 }
 ```
 
@@ -137,34 +139,34 @@ Run: `go get github.com/go-resty/resty/v2@latest`
 package collector
 
 import (
-	"bytes"
-	"crypto/tls"
-	"encoding/json"
-	"fmt"
-	"net/http"
-	neturl "net/url"
-	"path"
-	"strings"
-	"time"
+ "bytes"
+ "crypto/tls"
+ "encoding/json"
+ "fmt"
+ "net/http"
+ neturl "net/url"
+ "path"
+ "strings"
+ "time"
 
-	"github.com/fjacquet/idrac_exporter/internal/config"
-	"github.com/fjacquet/idrac_exporter/internal/log"
-	"github.com/go-resty/resty/v2"
+ "github.com/fjacquet/idrac_exporter/internal/config"
+ "github.com/fjacquet/idrac_exporter/internal/log"
+ "github.com/go-resty/resty/v2"
 )
 
 type RedfishSession struct {
-	disabled bool
-	id       string
-	token    string
+ disabled bool
+ id       string
+ token    string
 }
 
 type Redfish struct {
-	client   *resty.Client
-	baseurl  string
-	hostname string
-	username string
-	password string
-	session  RedfishSession
+ client   *resty.Client
+ baseurl  string
+ hostname string
+ username string
+ password string
+ session  RedfishSession
 }
 
 const redfishRootPath = "/redfish/v1"
@@ -175,264 +177,264 @@ const redfishRootPath = "/redfish/v1"
 // resty v2 an added condition overrides the default error-retry, so this must
 // itself return true on err != nil for the methods we want retried.
 func retryIdempotent(r *resty.Response, err error) bool {
-	if r == nil || r.Request == nil {
-		return false
-	}
-	switch r.Request.Method {
-	case http.MethodGet, http.MethodHead:
-		return err != nil || r.StatusCode() >= 500
-	default:
-		return false
-	}
+ if r == nil || r.Request == nil {
+  return false
+ }
+ switch r.Request.Method {
+ case http.MethodGet, http.MethodHead:
+  return err != nil || r.StatusCode() >= 500
+ default:
+  return false
+ }
 }
 
 func NewRedfish(host string, auth *config.AuthConfig) *Redfish {
-	baseurl := fmt.Sprintf("%s://%s", auth.Scheme, host)
-	if auth.Port > 0 {
-		baseurl = fmt.Sprintf("%s:%d", baseurl, auth.Port)
-	}
+ baseurl := fmt.Sprintf("%s://%s", auth.Scheme, host)
+ if auth.Port > 0 {
+  baseurl = fmt.Sprintf("%s:%d", baseurl, auth.Port)
+ }
 
-	// Size the connection pool to the configured concurrency when set (Phase 2c).
-	// The 10/20 defaults preserve the historical unlimited behavior.
-	maxIdle, maxConns := 10, 20
-	if n := config.Config.Concurrency; n > 0 {
-		maxIdle = int(n)
-		maxConns = int(n) + 1
-	}
+ // Size the connection pool to the configured concurrency when set (Phase 2c).
+ // The 10/20 defaults preserve the historical unlimited behavior.
+ maxIdle, maxConns := 10, 20
+ if n := config.Config.Concurrency; n > 0 {
+  maxIdle = int(n)
+  maxConns = int(n) + 1
+ }
 
-	transport := &http.Transport{
-		Proxy:                 http.ProxyFromEnvironment,
-		TLSClientConfig:       &tls.Config{InsecureSkipVerify: !auth.Verify, MinVersion: tls.VersionTLS12},
-		MaxIdleConnsPerHost:   maxIdle,
-		MaxConnsPerHost:       maxConns,
-		IdleConnTimeout:       30 * time.Second,
-		ResponseHeaderTimeout: time.Duration(config.Config.Timeout) * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-	}
+ transport := &http.Transport{
+  Proxy:                 http.ProxyFromEnvironment,
+  TLSClientConfig:       &tls.Config{InsecureSkipVerify: !auth.Verify, MinVersion: tls.VersionTLS12},
+  MaxIdleConnsPerHost:   maxIdle,
+  MaxConnsPerHost:       maxConns,
+  IdleConnTimeout:       30 * time.Second,
+  ResponseHeaderTimeout: time.Duration(config.Config.Timeout) * time.Second,
+  ExpectContinueTimeout: 1 * time.Second,
+ }
 
-	client := resty.New().
-		SetTransport(transport).
-		SetTimeout(time.Duration(config.Config.Timeout) * time.Second).
-		// BMCs are reached over insecure transport by design, so resty's
-		// per-request basic-auth-over-HTTP warning would be log spam.
-		SetDisableWarn(true).
-		SetRetryCount(2).
-		SetRetryWaitTime(200 * time.Millisecond).
-		SetRetryMaxWaitTime(1 * time.Second).
-		AddRetryCondition(retryIdempotent)
+ client := resty.New().
+  SetTransport(transport).
+  SetTimeout(time.Duration(config.Config.Timeout) * time.Second).
+  // BMCs are reached over insecure transport by design, so resty's
+  // per-request basic-auth-over-HTTP warning would be log spam.
+  SetDisableWarn(true).
+  SetRetryCount(2).
+  SetRetryWaitTime(200 * time.Millisecond).
+  SetRetryMaxWaitTime(1 * time.Second).
+  AddRetryCondition(retryIdempotent)
 
-	return &Redfish{
-		client:   client,
-		baseurl:  baseurl,
-		hostname: host,
-		username: auth.Username,
-		password: auth.Password,
-		session: RedfishSession{
-			disabled: auth.BasicAuth,
-		},
-	}
+ return &Redfish{
+  client:   client,
+  baseurl:  baseurl,
+  hostname: host,
+  username: auth.Username,
+  password: auth.Password,
+  session: RedfishSession{
+   disabled: auth.BasicAuth,
+  },
+ }
 }
 
 func (r *Redfish) DisableSession() {
-	r.session.disabled = true
-	r.session.token = ""
-	r.session.id = ""
-	log.Info("Session authentication disabled for %s due to failed creation or refresh", r.hostname)
+ r.session.disabled = true
+ r.session.token = ""
+ r.session.id = ""
+ log.Info("Session authentication disabled for %s due to failed creation or refresh", r.hostname)
 }
 
 func (r *Redfish) CreateSession() bool {
-	if r.session.disabled {
-		return false
-	}
+ if r.session.disabled {
+  return false
+ }
 
-	url := fmt.Sprintf("%s/redfish/v1/SessionService/Sessions", r.baseurl)
-	session := Session{
-		Username: r.username,
-		Password: r.password,
-	}
+ url := fmt.Sprintf("%s/redfish/v1/SessionService/Sessions", r.baseurl)
+ session := Session{
+  Username: r.username,
+  Password: r.password,
+ }
 
-	resp, err := r.client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(&session).
-		Post(url)
-	if err != nil {
-		log.Error("Failed to query %q: %v", url, err)
-		return false
-	}
+ resp, err := r.client.R().
+  SetHeader("Content-Type", "application/json").
+  SetBody(&session).
+  Post(url)
+ if err != nil {
+  log.Error("Failed to query %q: %v", url, err)
+  return false
+ }
 
-	// iDRAC 8 used /redfish/v1/Sessions; newer firmware uses
-	// /redfish/v1/SessionService/Sessions. Fall back on 405.
-	if resp.StatusCode() == http.StatusMethodNotAllowed {
-		url = fmt.Sprintf("%s/redfish/v1/Sessions", r.baseurl)
-		resp, err = r.client.R().
-			SetHeader("Content-Type", "application/json").
-			SetBody(&session).
-			Post(url)
-		if err != nil {
-			r.DisableSession()
-			return false
-		}
-	}
+ // iDRAC 8 used /redfish/v1/Sessions; newer firmware uses
+ // /redfish/v1/SessionService/Sessions. Fall back on 405.
+ if resp.StatusCode() == http.StatusMethodNotAllowed {
+  url = fmt.Sprintf("%s/redfish/v1/Sessions", r.baseurl)
+  resp, err = r.client.R().
+   SetHeader("Content-Type", "application/json").
+   SetBody(&session).
+   Post(url)
+  if err != nil {
+   r.DisableSession()
+   return false
+  }
+ }
 
-	if resp.StatusCode() != http.StatusCreated {
-		log.Error("Unexpected status code from %q: %s", url, resp.Status())
-		return false
-	}
+ if resp.StatusCode() != http.StatusCreated {
+  log.Error("Unexpected status code from %q: %s", url, resp.Status())
+  return false
+ }
 
-	if err := json.Unmarshal(resp.Body(), &session); err != nil {
-		log.Error("Error decoding response from %q: %v", url, err)
-		return false
-	}
+ if err := json.Unmarshal(resp.Body(), &session); err != nil {
+  log.Error("Error decoding response from %q: %v", url, err)
+  return false
+ }
 
-	r.session.id = session.OdataId
-	r.session.token = resp.Header().Get("X-Auth-Token")
+ r.session.id = session.OdataId
+ r.session.token = resp.Header().Get("X-Auth-Token")
 
-	// iLO 4
-	if len(r.session.id) == 0 {
-		u, err := neturl.Parse(resp.Header().Get("Location"))
-		if err == nil {
-			r.session.id = u.Path
-		}
-	}
+ // iLO 4
+ if len(r.session.id) == 0 {
+  u, err := neturl.Parse(resp.Header().Get("Location"))
+  if err == nil {
+   r.session.id = u.Path
+  }
+ }
 
-	log.Debug("Succesfully created session: %s", path.Base(r.session.id))
-	return true
+ log.Debug("Succesfully created session: %s", path.Base(r.session.id))
+ return true
 }
 
 func (r *Redfish) DeleteSession() bool {
-	if len(r.session.token) == 0 {
-		return true
-	}
+ if len(r.session.token) == 0 {
+  return true
+ }
 
-	url := fmt.Sprintf("%s%s", r.baseurl, r.session.id)
-	resp, err := r.client.R().
-		SetHeader("Accept", "application/json").
-		SetHeader("X-Auth-Token", r.session.token).
-		Delete(url)
-	if err != nil {
-		log.Error("Failed to query %q: %v", url, err)
-		return false
-	}
+ url := fmt.Sprintf("%s%s", r.baseurl, r.session.id)
+ resp, err := r.client.R().
+  SetHeader("Accept", "application/json").
+  SetHeader("X-Auth-Token", r.session.token).
+  Delete(url)
+ if err != nil {
+  log.Error("Failed to query %q: %v", url, err)
+  return false
+ }
 
-	if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusNoContent {
-		log.Error("Unexpected status code from %q: %s", url, resp.Status())
-		return false
-	}
+ if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusNoContent {
+  log.Error("Unexpected status code from %q: %s", url, resp.Status())
+  return false
+ }
 
-	log.Debug("Succesfully deleted session: %s", path.Base(r.session.id))
-	r.session.id = ""
-	r.session.token = ""
+ log.Debug("Succesfully deleted session: %s", path.Base(r.session.id))
+ r.session.id = ""
+ r.session.token = ""
 
-	return true
+ return true
 }
 
 func (r *Redfish) RefreshSession() bool {
-	if r.session.disabled {
-		return false
-	}
+ if r.session.disabled {
+  return false
+ }
 
-	if len(r.session.token) == 0 {
-		ok := r.CreateSession()
-		if !ok {
-			r.DisableSession()
-		}
-		return ok
-	}
+ if len(r.session.token) == 0 {
+  ok := r.CreateSession()
+  if !ok {
+   r.DisableSession()
+  }
+  return ok
+ }
 
-	url := fmt.Sprintf("%s%s", r.baseurl, r.session.id)
-	resp, err := r.client.R().
-		SetHeader("Accept", "application/json").
-		SetHeader("X-Auth-Token", r.session.token).
-		Get(url)
-	if err != nil {
-		return false
-	}
+ url := fmt.Sprintf("%s%s", r.baseurl, r.session.id)
+ resp, err := r.client.R().
+  SetHeader("Accept", "application/json").
+  SetHeader("X-Auth-Token", r.session.token).
+  Get(url)
+ if err != nil {
+  return false
+ }
 
-	if resp.StatusCode() == http.StatusUnauthorized || resp.StatusCode() == http.StatusNotFound {
-		ok := r.CreateSession()
-		if !ok {
-			r.DisableSession()
-		}
-		return ok
-	} else if resp.StatusCode() != http.StatusOK {
-		log.Error("Unexpected status code %d during session refresh", resp.StatusCode())
-		return false
-	}
+ if resp.StatusCode() == http.StatusUnauthorized || resp.StatusCode() == http.StatusNotFound {
+  ok := r.CreateSession()
+  if !ok {
+   r.DisableSession()
+  }
+  return ok
+ } else if resp.StatusCode() != http.StatusOK {
+  log.Error("Unexpected status code %d during session refresh", resp.StatusCode())
+  return false
+ }
 
-	return true
+ return true
 }
 
 func (r *Redfish) Get(path string, res any) bool {
-	if !strings.HasPrefix(path, redfishRootPath) {
-		return false
-	}
+ if !strings.HasPrefix(path, redfishRootPath) {
+  return false
+ }
 
-	url := fmt.Sprintf("%s%s", r.baseurl, path)
-	req := r.client.R().SetHeader("Accept", "application/json")
-	if len(r.session.token) > 0 {
-		req.SetHeader("X-Auth-Token", r.session.token)
-	} else {
-		req.SetBasicAuth(r.username, r.password)
-	}
+ url := fmt.Sprintf("%s%s", r.baseurl, path)
+ req := r.client.R().SetHeader("Accept", "application/json")
+ if len(r.session.token) > 0 {
+  req.SetHeader("X-Auth-Token", r.session.token)
+ } else {
+  req.SetBasicAuth(r.username, r.password)
+ }
 
-	log.Debug("Querying %q", url)
-	resp, err := req.Get(url)
-	if err != nil {
-		log.Error("Failed to query %q: %v", url, err)
-		return false
-	}
+ log.Debug("Querying %q", url)
+ resp, err := req.Get(url)
+ if err != nil {
+  log.Error("Failed to query %q: %v", url, err)
+  return false
+ }
 
-	if config.Trace {
-		log.Info("trace: GET %s -> %d", path, resp.StatusCode())
-	}
+ if config.Trace {
+  log.Info("trace: GET %s -> %d", path, resp.StatusCode())
+ }
 
-	if resp.StatusCode() != http.StatusOK {
-		log.Error("Unexpected status code from %q: %s", url, resp.Status())
-		return false
-	}
+ if resp.StatusCode() != http.StatusOK {
+  log.Error("Unexpected status code from %q: %s", url, resp.Status())
+  return false
+ }
 
-	if config.Debug {
-		log.Debug("Response from %q: %s", url, resp.Body())
-	}
+ if config.Debug {
+  log.Debug("Response from %q: %s", url, resp.Body())
+ }
 
-	// Issue #192
-	body := bytes.ReplaceAll(resp.Body(), []byte("\r"), []byte(""))
+ // Issue #192
+ body := bytes.ReplaceAll(resp.Body(), []byte("\r"), []byte(""))
 
-	if err := json.Unmarshal(body, res); err != nil {
-		log.Error("Error decoding response from %q: %v", url, err)
-		return false
-	}
+ if err := json.Unmarshal(body, res); err != nil {
+  log.Error("Error decoding response from %q: %v", url, err)
+  return false
+ }
 
-	return true
+ return true
 }
 
 func (r *Redfish) Exists(path string) bool {
-	if !strings.HasPrefix(path, redfishRootPath) {
-		return false
-	}
+ if !strings.HasPrefix(path, redfishRootPath) {
+  return false
+ }
 
-	url := fmt.Sprintf("%s%s", r.baseurl, path)
-	req := r.client.R().SetHeader("Accept", "application/json")
-	if len(r.session.token) > 0 {
-		req.SetHeader("X-Auth-Token", r.session.token)
-	} else {
-		req.SetBasicAuth(r.username, r.password)
-	}
+ url := fmt.Sprintf("%s%s", r.baseurl, path)
+ req := r.client.R().SetHeader("Accept", "application/json")
+ if len(r.session.token) > 0 {
+  req.SetHeader("X-Auth-Token", r.session.token)
+ } else {
+  req.SetBasicAuth(r.username, r.password)
+ }
 
-	resp, err := req.Head(url)
-	if err != nil {
-		return false
-	}
+ resp, err := req.Head(url)
+ if err != nil {
+  return false
+ }
 
-	if config.Trace {
-		log.Info("trace: HEAD %s -> %d", path, resp.StatusCode())
-	}
+ if config.Trace {
+  log.Info("trace: HEAD %s -> %d", path, resp.StatusCode())
+ }
 
-	if resp.StatusCode() >= 400 && resp.StatusCode() <= 499 {
-		return false
-	}
+ if resp.StatusCode() >= 400 && resp.StatusCode() <= 499 {
+  return false
+ }
 
-	return true
+ return true
 }
 ```
 
@@ -496,6 +498,7 @@ Expected: PASS.
 ---
 
 ## Self-review notes
+
 - **Spec coverage (§3a):** transport → resty (Task 1 Step 4); all quirks preserved (405 fallback, iLO 4 Location, `\r` strip, token-safe trace, basic-auth fallback — all present verbatim in the rewrite); conn-pool from 2c carried onto resty's transport; retry **GET/HEAD only, excludes 4xx, POST never retried** (`retryIdempotent` + tests in Step 1). Contract-neutral: existing exposition/trace tests guard it (Step 7).
 - **Placeholder scan:** none — full file and full test code provided.
 - **Type consistency:** `retryIdempotent(*resty.Response, error) bool` defined and passed to `AddRetryCondition`; `Redfish.client` is `*resty.Client` and every method uses `r.client.R()`; `newTestRedfish`/`installConfig` (the latter from `redfish_test.go`, same package) used by the new tests.

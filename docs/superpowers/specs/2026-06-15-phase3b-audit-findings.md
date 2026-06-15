@@ -11,6 +11,7 @@
 ## A. Metric-affecting field drift (must fix)
 
 ### A1 — `Temperature.Number` → `SensorNumber` · severity medium · affectsMetric ✅
+
 - **File:** `internal/collector/model.go` (`Temperature` struct, field `Number int` `json:"Number"`, ~line 271).
 - **Spec:** Both swagger files (DMTF `Thermal.v1_7_3.Temperature` examples; Dell Thermal example) name the property **`SensorNumber`**, not `Number`. The sibling `Voltages` struct already uses `SensorNumber int` `json:"SensorNumber"` — the intended pattern.
 - **Impact:** The wrong tag means `Number` never unmarshals (stays `0`). `Temperature.GetId()` (model.go ~281-289) uses `t.Number` as the fallback when `MemberId` is empty (consumed at `client.go:324` `t.GetId(n)`). So on BMCs that omit `MemberId` (older firmware), temperature metric label IDs fall back to the **array index** instead of the real sensor number → silent label drift across scrapes if array order changes.

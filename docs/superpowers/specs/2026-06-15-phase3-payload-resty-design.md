@@ -39,13 +39,16 @@ Rework `internal/collector/redfish.go` (currently the only `net/http` user in th
 - **Timeouts:** preserve the existing `config.Config.Timeout`-derived client timeout and response-header timeout.
 
 ### 3a tests
+
 Extend the `httptest` harness:
+
 - a flaky GET (first attempt 503, second 200) is retried and succeeds;
 - a GET returning 404/400 is **not** retried (single request observed);
 - the session `POST` is issued exactly once even when it fails;
 - `--trace` output never contains a token; `\r` is still stripped.
 
 ### 3a exit criteria
+
 `make ci` green; metric output byte-identical to `main`; the four behaviors above are asserted; no `net/http` client construction remains in `redfish.go` (resty owns the transport).
 
 ---
@@ -57,11 +60,13 @@ Extend the `httptest` harness:
 - **Absent-not-zero audit (D3):** review the `metrics.go` emitters. Where a missing or unparseable field currently yields `MustNewConstMetric(..., 0)` — capacity, energy, error counts, health, speeds — emit **no sample** instead. Record each newly-absent-on-malformed metric in the PR description; these are the only output changes in Phase 3.
 
 ### 3b tests
+
 - Table-driven `xstring`/`asFloat64` cases: `null`, string, integer, float, `[{"Member": …}]`, **empty list `[]`**, `"N/A"`, stray `\r`.
 - Emitter tests: an absent/garbled source field produces **no** sample (not a `0`), while a valid field still emits.
 - Existing exposition assertions updated only where a fake-zero was removed (documented).
 
 ### 3b exit criteria
+
 `make ci` green; no `UnmarshalJSON` can panic on any of the fuzzed shapes; spec-validated field set is the basis for 3c; every emitter either produces a correct sample or none.
 
 ---
@@ -72,6 +77,7 @@ Extend the `httptest` harness:
 - Add it to the mkdocs nav.
 
 ### 3c exit criteria
+
 `make ci` green; `docs/metrics.md` lists every metric `Describe`/`Collect` can emit; Pages builds; the catalog matches a live `--once` sample.
 
 ---

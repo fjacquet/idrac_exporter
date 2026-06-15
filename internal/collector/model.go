@@ -314,9 +314,6 @@ type ThermalMetrics struct {
 	Id          string `json:"Id"`
 	Name        string `json:"Name"`
 	Description string `json:"Description"`
-	PowerWatts  struct {
-		Reading float64 `json:"Reading"`
-	} `json:"PowerWatts"`
 	TemperatureReadingsCelsius []struct {
 		DeviceName      string   `json:"DeviceName"`
 		PhysicalContext string   `json:"PhysicalContext"`
@@ -640,8 +637,6 @@ type PowerControlUnit struct {
 	PowerCapacityWatts      float64 `json:"PowerCapacityWatts"`
 	PowerConsumedWatts      float64 `json:"PowerConsumedWatts"`
 	PowerRequestedWatts     float64 `json:"PowerRequestedWatts"`
-	ChassisPowerConsumption float64 `json:"ChassisPowerConsumption"`
-	NodePowerConsumption    float64 `json:"NodePowerConsumption"`
 	PowerLimit              *struct {
 		CorrectionInMs int    `json:"CorrectionInMs"`
 		LimitException string `json:"LimitException"`
