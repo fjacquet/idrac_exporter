@@ -12,6 +12,7 @@ import (
 	"github.com/fjacquet/idrac_exporter/internal/version"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
+	dto "github.com/prometheus/client_model/go"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -25,7 +26,7 @@ type Collector struct {
 	collected  *sync.Cond
 	collecting bool
 	errors     atomic.Uint64
-	builder    *strings.Builder
+	families   []*dto.MetricFamily
 
 	// Exporter
 	ExporterBuildInfo         *prometheus.Desc
@@ -490,7 +491,6 @@ func NewCollector() *Collector {
 		),
 	}
 
-	collector.builder = new(strings.Builder)
 	collector.collected = sync.NewCond(new(sync.Mutex))
 	collector.registry = prometheus.NewRegistry()
 	if err := collector.registry.Register(collector); err != nil {
@@ -628,22 +628,24 @@ func (collector *Collector) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(collector.ExporterScrapeErrorsTotal, prometheus.CounterValue, float64(collector.errors.Load()))
 }
 
-func (collector *Collector) Gather() (string, error) {
+// GatherFamilies gathers the registry into metric families, coalescing
+// concurrent callers via sync.Cond so a single collection serves them all.
+// The returned slice is shared with other coalesced callers — callers that
+// mutate it (e.g. the snapshot loop) must clone first.
+func (collector *Collector) GatherFamilies() ([]*dto.MetricFamily, error) {
 	collector.collected.L.Lock()
 
-	// If a collection is already in progress wait for it to complete and return the cached data
+	// A collection is already in progress: wait and return its cached families.
 	if collector.collecting {
 		collector.collected.Wait()
-		metrics := collector.builder.String()
+		families := collector.families
 		collector.collected.L.Unlock()
-		return metrics, nil
+		return families, nil
 	}
 
-	// Set collecting to true and let other goroutines enter in critical section
 	collector.collecting = true
 	collector.collected.L.Unlock()
 
-	// Defer set collecting to false and wake waiting goroutines
 	defer func() {
 		collector.collected.L.Lock()
 		collector.collected.Broadcast()
@@ -651,21 +653,28 @@ func (collector *Collector) Gather() (string, error) {
 		collector.collected.L.Unlock()
 	}()
 
-	// Collect metrics
-	collector.builder.Reset()
-
 	m, err := collector.registry.Gather()
+	if err != nil {
+		return nil, err
+	}
+	collector.families = m
+	return m, nil
+}
+
+// Gather serializes the gathered families to the Prometheus text exposition
+// format. Output is byte-identical to the pre-refactor implementation.
+func (collector *Collector) Gather() (string, error) {
+	m, err := collector.GatherFamilies()
 	if err != nil {
 		return "", err
 	}
-
+	var b strings.Builder
 	for i := range m {
-		if _, err := expfmt.MetricFamilyToText(collector.builder, m[i]); err != nil {
+		if _, err := expfmt.MetricFamilyToText(&b, m[i]); err != nil {
 			return "", err
 		}
 	}
-
-	return collector.builder.String(), nil
+	return b.String(), nil
 }
 
 // Resets an existing collector of the given target
