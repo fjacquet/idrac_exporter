@@ -63,7 +63,7 @@ helm install idrac-exporter oci://ghcr.io/fjacquet/charts/idrac-exporter
 
 
 ## Configuration
-There are many [configuration options](sample-config.yml) for the exporter, but most importantly you must provide credentials for all remote hosts and choose what metrics should be exported. By default, the exporter looks for the configuration file in `/etc/prometheus/idrac.yml` but the path can be specified using the `-config` option.
+There are many [configuration options](sample-config.yml) for the exporter, but most importantly you must provide credentials for all remote hosts and choose what metrics should be exported. By default, the exporter looks for the configuration file in `/etc/prometheus/idrac.yml` but the path can be specified using the `--config` option.
 
 ```yaml
 address: 127.0.0.1 # Listen address

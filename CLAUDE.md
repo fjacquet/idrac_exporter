@@ -13,14 +13,14 @@ make cli              # build bin/idrac_exporter with version/revision ldflags (
 make ci               # the gate: fmt-check, vet, golangci-lint, go test -race, govulncheck
 make sure             # local convenience: fmt, vet, test, build, lint
 make tools            # install pinned golangci-lint, cyclonedx-gomod, govulncheck
-make run              # go run with RUNFLAGS (default: -config config.yml -verbose)
+make run              # go run with RUNFLAGS (default: --config config.yml --verbose)
 make sbom             # CycloneDX module SBOM
 make release-snapshot # GoReleaser local dry-run (no publish)
 ```
 
-CI runs `make ci` — every CI step is a Makefile target, so it reproduces locally. There is **no test suite yet** (`*_test.go` files do not exist; tests arrive in Phase 2), so `go test -race` passes trivially. Verify changes by building and running against a real or mocked Redfish endpoint. Use `-debug` to dump every raw Redfish JSON response (implies `-verbose`) — the primary tool when adding vendor support.
+CI runs `make ci` — every CI step is a Makefile target, so it reproduces locally. There is **no test suite yet** (`*_test.go` files do not exist; tests arrive in Phase 2), so `go test -race` passes trivially. Verify changes by building and running against a real or mocked Redfish endpoint. Use `--debug` to dump every raw Redfish JSON response (implies `--verbose`) — the primary tool when adding vendor support.
 
-Key flags: `-config <path>` (default `/etc/prometheus/idrac.yml`), `-config-watch` (hot-reload on file change via fsnotify), `-verbose`, `-debug`, `-version`.
+Key flags: `--config <path>` (default `/etc/prometheus/idrac.yml`), `--config-watch` (hot-reload on file change via fsnotify), `--verbose`, `--debug`, `--version`.
 
 `VERSION` in the Makefile comes from a `vX.Y.Z` tag on HEAD (else `dev`), so locally-built binaries report `version=dev` unless HEAD is tagged.
 

@@ -15,7 +15,7 @@ LDFLAGS += -X $(REPOSITORY)/internal/version.Version=$(VERSION)
 LDFLAGS += -X $(REPOSITORY)/internal/version.Revision=$(REVISION)
 GOFLAGS := -trimpath -ldflags "$(LDFLAGS)"
 
-RUNFLAGS ?= -config config.yml -verbose
+RUNFLAGS ?= --config config.yml --verbose
 
 # Pinned dev tools (installed by `make tools`).
 GOLANGCI_LINT_VERSION   := v2.12.2
