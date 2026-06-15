@@ -1,13 +1,6 @@
 package log
 
-import "os"
-
-var logger = &Logger{
-	level:      LevelInfo,
-	console:    true,
-	dateFormat: "2006-01-02T15:04:05.000",
-	writer:     os.Stdout,
-}
+var logger = NewLogger(LevelInfo, true)
 
 func SetDefaultLogger(l *Logger) {
 	logger = l

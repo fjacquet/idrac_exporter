@@ -1,137 +1,85 @@
 package log
 
 import (
-	"fmt"
 	"io"
 	"os"
-	"strings"
-	"sync"
-	"time"
+
+	"github.com/sirupsen/logrus"
+	"golang.org/x/term"
 )
 
 const (
-	LevelFatal = 0
-	LevelError = 1
-	LevelWarn  = 2
-	LevelInfo  = 3
-	LevelDebug = 4
+	LevelFatal = iota
+	LevelError
+	LevelWarn
+	LevelInfo
+	LevelDebug
 )
 
+var levelToLogrus = map[int]logrus.Level{
+	LevelFatal: logrus.FatalLevel,
+	LevelError: logrus.ErrorLevel,
+	LevelWarn:  logrus.WarnLevel,
+	LevelInfo:  logrus.InfoLevel,
+	LevelDebug: logrus.DebugLevel,
+}
+
+// toLogrusLevel maps an internal level to logrus, defaulting to Info for any
+// value outside the defined constants (the zero value would be PanicLevel,
+// which would silently suppress everything).
+func toLogrusLevel(level int) logrus.Level {
+	if l, ok := levelToLogrus[level]; ok {
+		return l
+	}
+	return logrus.InfoLevel
+}
+
+const timestampFormat = "2006-01-02T15:04:05.000"
+
+// Logger wraps logrus, preserving the package's printf-style API.
 type Logger struct {
-	level      int
-	dateFormat string
-	console    bool
-	logFile    string
-	file       *os.File
-	writer     io.Writer
-	mu         sync.Mutex
+	l *logrus.Logger
 }
 
-func NewLogger(level int, console bool) *Logger {
-	var w io.Writer
-	if console {
-		w = os.Stdout
+func formatterFor(w io.Writer) logrus.Formatter {
+	if f, ok := w.(*os.File); ok && term.IsTerminal(int(f.Fd())) {
+		return &logrus.TextFormatter{FullTimestamp: true, TimestampFormat: timestampFormat}
 	}
-
-	return &Logger{
-		level:      level,
-		console:    console,
-		dateFormat: "2006-01-02T15:04:05.000",
-		writer:     w,
-	}
+	return &logrus.JSONFormatter{TimestampFormat: timestampFormat}
 }
 
+// NewLoggerWithOutput builds a logger writing to w, selecting a TTY-aware formatter.
+func NewLoggerWithOutput(level int, w io.Writer) *Logger {
+	l := logrus.New()
+	l.SetOutput(w)
+	l.SetFormatter(formatterFor(w))
+	l.SetLevel(toLogrusLevel(level))
+	return &Logger{l: l}
+}
+
+// NewLogger builds a logger writing to stdout. The console arg is retained for
+// API compatibility and ignored (formatter selection is TTY-aware).
+func NewLogger(level int, _ bool) *Logger {
+	return NewLoggerWithOutput(level, os.Stdout)
+}
+
+func (log *Logger) SetLevel(level int) { log.l.SetLevel(toLogrusLevel(level)) }
+
+// SetLogFile redirects log output to the given file (replacing stdout). The file
+// is created 0o640 — logs may contain hostnames or error detail, so it is not
+// world-readable.
 func (log *Logger) SetLogFile(path string) error {
-	log.mu.Lock()
-	defer log.mu.Unlock()
-
-	log.logFile = path
-	return log.open()
-}
-
-func (log *Logger) SetLevel(level int) {
-	log.level = level
-}
-
-func (log *Logger) Fatal(format string, args ...any) {
-	log.write(LevelFatal, format, args...)
-	if log.file != nil {
-		_ = log.file.Close()
-	}
-	os.Exit(1)
-}
-
-func (log *Logger) Error(format string, args ...any) {
-	if LevelError > log.level {
-		return
-	}
-	log.write(LevelError, format, args...)
-}
-
-func (log *Logger) Warn(format string, args ...any) {
-	if LevelWarn > log.level {
-		return
-	}
-	log.write(LevelWarn, format, args...)
-}
-
-func (log *Logger) Info(format string, args ...any) {
-	if LevelInfo > log.level {
-		return
-	}
-	log.write(LevelInfo, format, args...)
-}
-
-func (log *Logger) Debug(format string, args ...any) {
-	if LevelDebug > log.level {
-		return
-	}
-	log.write(LevelDebug, format, args...)
-}
-
-func (log *Logger) open() error {
-	perms := os.O_WRONLY | os.O_APPEND | os.O_CREATE
-
-	f, err := os.OpenFile(log.logFile, perms, 0o640)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o640)
 	if err != nil {
 		return err
 	}
-
-	if log.console {
-		log.writer = io.MultiWriter(os.Stdout, f)
-	} else {
-		log.writer = f
-	}
-
-	log.file = f
+	log.l.SetOutput(f)
+	log.l.SetFormatter(formatterFor(f))
 	return nil
 }
 
-func (log *Logger) write(level int, format string, args ...any) {
-	var lvlstr string
-
-	if log.writer == nil {
-		return
-	}
-
-	switch level {
-	case LevelFatal:
-		lvlstr = "FATAL"
-	case LevelError:
-		lvlstr = "ERROR"
-	case LevelWarn:
-		lvlstr = "WARN"
-	case LevelInfo:
-		lvlstr = "INFO"
-	case LevelDebug:
-		lvlstr = "DEBUG"
-	}
-
-	log.mu.Lock()
-	defer log.mu.Unlock()
-
-	dt := time.Now()
-	f := fmt.Sprintf(format, args...)
-	f = fmt.Sprintf("%s %-5s %s\n", dt.Format(log.dateFormat), lvlstr, strings.TrimSpace(f))
-	_, _ = log.writer.Write([]byte(f))
-}
+func (log *Logger) Fatal(format string, args ...any) { log.l.Fatalf(format, args...) }
+func (log *Logger) Error(format string, args ...any) { log.l.Errorf(format, args...) }
+func (log *Logger) Warn(format string, args ...any)  { log.l.Warnf(format, args...) }
+func (log *Logger) Info(format string, args ...any)  { log.l.Infof(format, args...) }
+func (log *Logger) Debug(format string, args ...any) { log.l.Debugf(format, args...) }
