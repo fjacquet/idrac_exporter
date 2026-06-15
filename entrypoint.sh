@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 auth_file="/authconfig/$NODE_NAME"
 if [ -f "$auth_file" ]; then

@@ -1,3 +1,29 @@
+# Build artifacts
+/bin/
+/dist/
+/idrac_exporter
+coverage.out
+coverage.html
+sbom.json
+
+# MkDocs output
+/site/
+
+# Logs
+*.log
+
+# Local secrets / working config
+.env
+*.local.yaml
+/config.yml
+/config.yaml
+.claude.local.md
+.claude/settings.local.json
+
+# Editor / OS
 .idea
 .vscode
 .DS_Store
+
+# rtk
+.rtk/
