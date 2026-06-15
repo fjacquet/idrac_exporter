@@ -268,7 +268,7 @@ func (f *Fan) GetId(fallback int) string {
 
 type Temperature struct {
 	Name                string  `json:"Name"`
-	Number              int     `json:"Number"`
+	SensorNumber        int     `json:"SensorNumber"`
 	MemberId            string  `json:"MemberId"`
 	ReadingCelsius      float64 `json:"ReadingCelsius"`
 	MaxReadingRangeTemp float64 `json:"MaxReadingRangeTemp"`
@@ -282,8 +282,8 @@ func (t *Temperature) GetId(fallback int) string {
 	if len(t.MemberId) > 0 {
 		return t.MemberId
 	}
-	if t.Number > 0 {
-		return strconv.Itoa(t.Number)
+	if t.SensorNumber > 0 {
+		return strconv.Itoa(t.SensorNumber)
 	}
 	return strconv.Itoa(fallback)
 }
