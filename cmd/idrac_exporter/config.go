@@ -30,11 +30,11 @@ func ReloadConfig(filename string) {
 		return
 	}
 
-	old.Collect = cfg.Collect
-	old.Event = cfg.Event
-
 	old.Mutex.Lock()
 	defer old.Mutex.Unlock()
+
+	old.Collect = cfg.Collect
+	old.Event = cfg.Event
 
 	for k, v := range cfg.Hosts {
 		h, ok := old.Hosts[k]
@@ -74,23 +74,21 @@ func WatchConfig(filename string) {
 				return
 			}
 			if time.Since(lastReload) < time.Second {
-				break // needed to deduplicate e.g. multiple write events
+				break // deduplicate bursts of write events
 			}
-			reload := false
-			if event.Has(fsnotify.Write) {
-				reload = true
-			} else if event.Has(fsnotify.Remove) {
+			if !shouldReload(event) {
+				break
+			}
+			// Editors save via rename/replace, which drops the watch; re-add it.
+			if event.Has(fsnotify.Remove) || event.Has(fsnotify.Rename) {
 				_ = watcher.Remove(event.Name)
-				err := watcher.Add(filename)
-				if err != nil {
+				if !readd(watcher, filename) {
+					log.Error("Stopped watching %s after repeated re-add failures", filename)
 					return
 				}
-				reload = true
 			}
-			if reload {
-				lastReload = time.Now()
-				ReloadConfig(filename)
-			}
+			lastReload = time.Now()
+			ReloadConfig(filename)
 		case err, ok := <-watcher.Errors:
 			if !ok {
 				return
@@ -98,6 +96,23 @@ func WatchConfig(filename string) {
 			log.Error("File watcher error: %v", err)
 		}
 	}
+}
+
+// shouldReload reports whether a watcher event warrants a config reload.
+func shouldReload(event fsnotify.Event) bool {
+	return event.Has(fsnotify.Write) || event.Has(fsnotify.Remove) || event.Has(fsnotify.Rename)
+}
+
+// readd re-attaches the watch after a rename/remove, with a bounded retry. It
+// does NOT recurse or spawn goroutines (unlike upstream PR #148).
+func readd(watcher *fsnotify.Watcher, filename string) bool {
+	for i := 0; i < 5; i++ {
+		if err := watcher.Add(filename); err == nil {
+			return true
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	return false
 }
 
 func LoadConfig(filename string, watch bool) {

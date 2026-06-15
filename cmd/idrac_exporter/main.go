@@ -72,6 +72,8 @@ func run(_ *cobra.Command, _ []string) error {
 		log.SetLevel(log.LevelDebug)
 	}
 
+	go handleSignals(flagConfig)
+
 	if flagOnce {
 		return runOnce(os.Stdout)
 	}
