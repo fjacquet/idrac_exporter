@@ -40,6 +40,7 @@ nav:
       - Docker Compose: deployment/docker.md
   - Dashboards: dashboards.md
   - Metrics: metrics.md
+  - OTLP push: otlp.md
   - Architecture Decisions:
       - Overview: adr/index.md
       - 0001 Supply-chain hardening: adr/0001-supply-chain-hardening.md
@@ -50,3 +51,4 @@ nav:
       - 0006 Auth & retry: adr/0006-token-auth-and-retry.md
       - 0007 Config hot reload: adr/0007-config-hot-reload.md
       - 0008 Absent, never zero: adr/0008-absent-not-zero-parsing.md
+      - 0009 OTLP via Prometheus bridge: adr/0009-otlp-via-prometheus-bridge.md

@@ -43,9 +43,9 @@ https_proxy: http://localhost:8888
 # include the entire chain of trust.
 # TLS can also be configured using the corresponding environment variables.
 tls:
-  enabled: false  # CONFIG_TLS_ENABLED=false
-  cert_file: ""   # CONFIG_TLS_CERT_FILE=
-  key_file: ""    # CONFIG_TLS_KEY_FILE=
+  enabled: false # CONFIG_TLS_ENABLED=false
+  cert_file: "" # CONFIG_TLS_CERT_FILE=
+  key_file: "" # CONFIG_TLS_KEY_FILE=
 
 # When setting this variable, the specified target will be used when the metrics
 # endpoint is called without the target parameter. Unset by default.
@@ -69,12 +69,12 @@ default_target: "192.168.1.1"
 # for any of the other targets.
 hosts:
   default:
-    username: user         # CONFIG_DEFAULT_USERNAME=user
-    password: pass         # CONFIG_DEFAULT_PASSWORD=pass
-    scheme: https          # CONFIG_DEFAULT_SCHEME=https
-    port: 8443             # CONFIG_DEFAULT_PORT=8443
-    use_basic_auth: true   # CONFIG_DEFAULT_USE_BASIC_AUTH=true
-    verify: false          # Verify the BMC TLS certificate chain (default false: BMCs use self-signed certs)
+    username: user # CONFIG_DEFAULT_USERNAME=user
+    password: pass # CONFIG_DEFAULT_PASSWORD=pass
+    scheme: https # CONFIG_DEFAULT_SCHEME=https
+    port: 8443 # CONFIG_DEFAULT_PORT=8443
+    use_basic_auth: true # CONFIG_DEFAULT_USE_BASIC_AUTH=true
+    verify: false # Verify the BMC TLS certificate chain (default false: BMCs use self-signed certs)
   192.168.1.1:
     username: user
     password: pass
@@ -99,21 +99,34 @@ auths:
 # Each section can also be enabled using the shown environment variable.
 # The group "all" overrides all other groups and enables all metrics.
 metrics:
-  all: false         # CONFIG_METRICS_ALL=false
-  processors: false  # CONFIG_METRICS_PROCESSORS=false
-  system: false      # CONFIG_METRICS_SYSTEM=false
-  sensors: false     # CONFIG_METRICS_SENSORS=false
-  power: false       # CONFIG_METRICS_POWER=false
-  events: false      # CONFIG_METRICS_EVENTS=false
-  storage: false     # CONFIG_METRICS_STORAGE=false
-  memory: false      # CONFIG_METRICS_MEMORY=false
-  network: false     # CONFIG_METRICS_NETWORK=false
-  manager: false     # CONFIG_METRICS_MANAGER=false
-  extra: false       # CONFIG_METRICS_EXTRA=false
+  all: false # CONFIG_METRICS_ALL=false
+  processors: false # CONFIG_METRICS_PROCESSORS=false
+  system: false # CONFIG_METRICS_SYSTEM=false
+  sensors: false # CONFIG_METRICS_SENSORS=false
+  power: false # CONFIG_METRICS_POWER=false
+  events: false # CONFIG_METRICS_EVENTS=false
+  storage: false # CONFIG_METRICS_STORAGE=false
+  memory: false # CONFIG_METRICS_MEMORY=false
+  network: false # CONFIG_METRICS_NETWORK=false
+  manager: false # CONFIG_METRICS_MANAGER=false
+  extra: false # CONFIG_METRICS_EXTRA=false
 
 # The events section is used for filtering events when the "events" metrics group
 # is enabled. Events can be filtered based on minimum severity and maximum age.
 # Severity must be one of "ok", "warning", "critical"
 events:
-  severity: warning  # CONFIG_EVENTS_SEVERITY=warning
-  maxage: 7d         # CONFIG_EVENTS_MAXAGE=7d
+  severity: warning # CONFIG_EVENTS_SEVERITY=warning
+  maxage: 7d # CONFIG_EVENTS_MAXAGE=7d
+
+
+# Optional background snapshot loop + OTLP push (off by default).
+# collection:
+#   interval: 60s
+# otlp:
+#   enabled: false
+#   endpoint: "localhost:4317"
+#   protocol: grpc
+#   insecure: false
+#   interval: 0s
+#   identity_label: system
+#   headers: {}

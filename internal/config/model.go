@@ -39,6 +39,22 @@ type TLSConfig struct {
 	KeyFile  string `yaml:"key_file"`
 }
 
+type CollectionConfig struct {
+	Interval        string `yaml:"interval"`
+	IntervalSeconds float64
+}
+
+type OTLPConfig struct {
+	Enabled         bool              `yaml:"enabled"`
+	Endpoint        string            `yaml:"endpoint"`
+	Protocol        string            `yaml:"protocol"`
+	Insecure        bool              `yaml:"insecure"`
+	Interval        string            `yaml:"interval"`
+	IdentityLabel   string            `yaml:"identity_label"`
+	Headers         map[string]string `yaml:"headers"`
+	IntervalSeconds float64
+}
+
 type RootConfig struct {
 	Mutex         sync.Mutex
 	Address       string                 `yaml:"address"`
@@ -51,6 +67,8 @@ type RootConfig struct {
 	TLS           TLSConfig              `yaml:"tls"`
 	Timeout       uint                   `yaml:"timeout"`
 	Concurrency   uint                   `yaml:"concurrency"`
+	Collection    CollectionConfig       `yaml:"collection"`
+	OTLP          OTLPConfig             `yaml:"otlp"`
 	Hosts         map[string]*AuthConfig `yaml:"hosts"`
 	Auths         map[string]*AuthConfig `yaml:"auths"`
 }

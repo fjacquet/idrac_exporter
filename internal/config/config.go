@@ -178,5 +178,44 @@ func (c *RootConfig) Validate() error {
 		c.Collect.Extra = true
 	}
 
+	// collection + otlp
+	if c.OTLP.IdentityLabel == "" {
+		c.OTLP.IdentityLabel = "system"
+	}
+	switch c.OTLP.Protocol {
+	case "":
+		c.OTLP.Protocol = "grpc"
+	case "grpc", "http":
+	default:
+		return fmt.Errorf("invalid otlp protocol: %s", c.OTLP.Protocol)
+	}
+	if c.OTLP.Endpoint == "" {
+		c.OTLP.Endpoint = "localhost:4317"
+	}
+	if c.Collection.Interval == "" {
+		c.Collection.Interval = "60s"
+	}
+	ci, err := str2duration.ParseDuration(c.Collection.Interval)
+	if err != nil {
+		return fmt.Errorf("parse collection interval: %v", err)
+	}
+	c.Collection.IntervalSeconds = ci.Seconds()
+	if c.OTLP.Interval != "" {
+		oi, err := str2duration.ParseDuration(c.OTLP.Interval)
+		if err != nil {
+			return fmt.Errorf("parse otlp interval: %v", err)
+		}
+		c.OTLP.IntervalSeconds = oi.Seconds()
+	}
+	if c.OTLP.IntervalSeconds == 0 {
+		c.OTLP.IntervalSeconds = c.Collection.IntervalSeconds
+	}
+	if c.Collection.IntervalSeconds <= 0 {
+		return fmt.Errorf("collection interval must be positive: %q", c.Collection.Interval)
+	}
+	if c.OTLP.IntervalSeconds <= 0 {
+		return fmt.Errorf("otlp interval must be positive: %q", c.OTLP.Interval)
+	}
+
 	return nil
 }

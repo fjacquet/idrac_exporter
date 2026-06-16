@@ -1,14 +1,19 @@
 package main
 
 import (
+	"context"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
 
+	"github.com/fjacquet/idrac_exporter/internal/collector"
 	"github.com/fjacquet/idrac_exporter/internal/config"
 	"github.com/fjacquet/idrac_exporter/internal/log"
 	"github.com/fjacquet/idrac_exporter/internal/version"
@@ -94,8 +99,49 @@ func run(_ *cobra.Command, _ []string) error {
 		Addr:              bind,
 		ReadHeaderTimeout: 10 * time.Second, // mitigate Slowloris
 	}
-	if config.Config.TLS.Enabled {
-		return srv.ListenAndServeTLS(config.Config.TLS.CertFile, config.Config.TLS.KeyFile)
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	ln, err := (&net.ListenConfig{}).Listen(ctx, "tcp", bind)
+	if err != nil {
+		return err
 	}
-	return srv.ListenAndServe()
+	if config.Config.TLS.Enabled {
+		cert, err := tls.LoadX509KeyPair(config.Config.TLS.CertFile, config.Config.TLS.KeyFile)
+		if err != nil {
+			return err
+		}
+		ln = tls.NewListener(ln, &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			MinVersion:   tls.VersionTLS12,
+		})
+	}
+
+	if config.Config.OTLP.Enabled {
+		store := collector.NewSnapshotStore()
+
+		// Build the OTLP pipeline before starting the loop, so a failed exporter
+		// setup never leaves an orphaned collection goroutine running.
+		otlp, err := collector.NewOTLP(ctx, store)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			shCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			if err := otlp.Shutdown(shCtx); err != nil {
+				log.Error("OTLP shutdown: %v", err)
+			}
+		}()
+
+		interval := time.Duration(config.Config.Collection.IntervalSeconds * float64(time.Second))
+		loop := collector.NewLoop(store, interval)
+		go loop.Run(ctx)
+
+		log.Info("OTLP push enabled: endpoint=%s protocol=%s interval=%vs",
+			config.Config.OTLP.Endpoint, config.Config.OTLP.Protocol, config.Config.OTLP.IntervalSeconds)
+	}
+
+	return serve(ctx, srv, ln)
 }

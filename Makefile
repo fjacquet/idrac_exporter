@@ -22,8 +22,11 @@ GOLANGCI_LINT_VERSION   := v2.12.2
 CYCLONEDX_GOMOD_VERSION := latest
 GOVULNCHECK_VERSION     := latest
 
-.PHONY: tools fmt fmt-check vet lint test test-race test-coverage vuln ci sure \
+.PHONY: all tools fmt fmt-check vet lint test test-race test-coverage vuln ci sure \
         cli build run run-cli sbom release release-snapshot docker clean help
+
+# Bare `make` runs the local verify+build pipeline, not the first target.
+.DEFAULT_GOAL := all
 
 ## tools: install pinned dev tooling
 tools:
@@ -63,6 +66,9 @@ test-coverage:
 ## vuln: govulncheck
 vuln:
 	govulncheck ./...
+
+## all: default target — fmt, vet, test, build, lint (local verify + binary)
+all: sure
 
 ## ci: the gate — fmt-check, vet, lint, race tests, vuln
 ci: fmt-check vet lint test-race vuln
