@@ -82,6 +82,9 @@ extraArgs: []
 
 existingSecret: ""
 
+# Inline exporter config, rendered into a Secret as idrac.yml. This is a free-form
+# passthrough — add any config here, including the optional `otlp:` / `collection:`
+# blocks to enable the OTLP push loop (off by default). See docs/otlp.md.
 idracConfig: |
   address: 0.0.0.0
   port: 9348
