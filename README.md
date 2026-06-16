@@ -9,275 +9,135 @@
 
 _Forked from [mrlhansen/idrac_exporter](https://github.com/mrlhansen/idrac_exporter)._
 
-This is a simple Redfish (iDRAC, iLO, XClarity) exporter for [Prometheus](https://prometheus.io). The exporter uses the Redfish API to collect information and it supports the regular `/metrics` endpoint to expose metrics from the host passed via the `target` parameter. For example, to scrape metrics from a Redfish instance on the IP address `192.168.1.1` call the following URL address.
+A Redfish exporter for [Prometheus](https://prometheus.io) that scrapes hardware health and telemetry from server BMCs — Dell iDRAC, HPE iLO, Lenovo XClarity, Supermicro and other Redfish-compliant systems. Metrics are collected **on-demand**: Prometheus passes the BMC address via the `target` parameter and the exporter opens a Redfish session to that host at scrape time.
 
 ```text
 http://localhost:9348/metrics?target=192.168.1.1
 ```
 
-Every time the exporter is called with a new target, it tries to establish a connection to the Redfish API. If the target is unreachable or if the authentication fails, the status code 500 is returned together with an error message.
+If the target is unreachable or authentication fails, the exporter returns status `500` with an error message.
 
+> 📖 **Full documentation:** <https://fjacquet.github.io/idrac_exporter/> —
+> [Metrics catalog](https://fjacquet.github.io/idrac_exporter/metrics/) ·
+> [Docker Compose](https://fjacquet.github.io/idrac_exporter/deployment/docker/) ·
+> [Dashboards](https://fjacquet.github.io/idrac_exporter/dashboards/) ·
+> [OTLP push](https://fjacquet.github.io/idrac_exporter/otlp/) ·
+> [Architecture Decisions](https://fjacquet.github.io/idrac_exporter/adr/)
 
-## Supported Systems
-The program supports several different systems, because they all follow the Redfish standard. The exporter has been tested on the following systems.
+## Export modes
 
-* HPE iLO
-* Dell iDRAC
-* Lenovo XClarity
-* Supermicro BMC
+Two modes can run side by side:
 
+* **On-demand scrape (primary).** Prometheus scrapes `/metrics?target=<bmc>`; the exporter opens a Redfish session per scrape. This is the default and the recommended model for a BMC fleet.
+* **Optional OTLP push.** A background loop polls the configured hosts on a fixed interval and pushes their metrics over OTLP. It is **off by default**, enabled under the `otlp:` block, and leaves the on-demand path unchanged. See the [OTLP guide](https://fjacquet.github.io/idrac_exporter/otlp/).
 
 ## Installation
-The exporter is written in [Go](https://golang.org) and it can be downloaded and compiled using:
+
+### Build from source
 
 ```sh
 git clone https://github.com/fjacquet/idrac_exporter.git
 cd idrac_exporter
-make
+make cli            # builds bin/idrac_exporter
 ```
 
-### Docker
-> [!IMPORTANT]
-> Starting with v2.3.0 the container images are released on GHCR instead of Docker Hub. For those using Helm, the images are automatically pulled from the new repository. However, users running the container manually will have to switch to the new repository.
-
-There is a `Dockerfile` in the repository for building a container image. To build it locally use:
+### Homebrew (macOS)
 
 ```sh
-docker build -t idrac_exporter .
+brew install fjacquet/tap/idrac_exporter
 ```
 
-There are also pre-built images available. To download these images, simply use the following command.
+Pre-built binaries for Linux, macOS and Windows (`amd64`/`arm64`) are attached to each [release](https://github.com/fjacquet/idrac_exporter/releases).
+
+### Docker
+
+Pre-built images are published on GHCR:
 
 ```sh
 docker pull ghcr.io/fjacquet/idrac_exporter
 ```
 
-Remember to set the listen address to `0.0.0.0` when running inside a container.
+Set the listen address to `0.0.0.0` when running in a container.
 
-### Helm Chart
-There is also a [Helm](https://helm.sh/docs/) chart for installing the exporter in a Kubernetes cluster. It is published as an OCI artifact on GHCR.
+### Docker Compose quickstart
+
+A one-command demo stack — exporter, Prometheus (with alert rules) and Grafana (datasource + dashboards auto-provisioned):
+
+```sh
+IDRAC1_HOST=10.0.0.10 IDRAC1_USERNAME=monitor IDRAC1_PASSWORD='secret' docker compose up -d
+```
+
+Grafana is then on <http://localhost:3000> (`admin`/`admin`), Prometheus on <http://localhost:9090>. A reachable BMC is required. Full walkthrough: [Docker Compose](https://fjacquet.github.io/idrac_exporter/deployment/docker/).
+
+### Helm
 
 ```sh
 helm install idrac-exporter oci://ghcr.io/fjacquet/charts/idrac-exporter
 ```
 
-
 ## Configuration
-There are many [configuration options](sample-config.yml) for the exporter, but most importantly you must provide credentials for all remote hosts and choose what metrics should be exported. By default, the exporter looks for the configuration file in `/etc/prometheus/idrac.yml` but the path can be specified using the `--config` option.
+
+By default the exporter reads `/etc/prometheus/idrac.yml` (override with `--config`). A minimal configuration:
 
 ```yaml
-address: 127.0.0.1 # Listen address
-port: 9348         # Listen port
-timeout: 10        # HTTP timeout (in seconds) for Redfish API calls
+address: 127.0.0.1   # listen address (use 0.0.0.0 in a container)
+port: 9348           # listen port
+timeout: 60          # Redfish HTTP timeout, in seconds (BMC calls can be slow)
 hosts:
-  default:
-    username: user
-    password: pass
-  192.168.1.1:
-    username: user
-    password: pass
-auths:
-  mygroup:
+  default:           # fallback credentials for any unmatched target
     username: user
     password: pass
 metrics:
-  all: true
+  all: true          # enable every metric group
 ```
 
-As shown in the example above, under `hosts` you can define credentials for individual hosts via their IP address or hostname. When a matching host cannot be found, the exporter will attempt to use the credentials under `default`. Alternatively you can define credentials for a group of hosts under the `auths` section and reference them in the request using the `auth` query parameter. For example:
+Per-host credentials can be keyed by IP/hostname under `hosts:`, or grouped under `auths:` and selected per request with `&auth=<group>`. File values are overridden by `CONFIG_*` environment variables, and `${VAR}` references in the YAML are expanded from the environment. The full reference — every option, env var, and the `collection:` / `otlp:` blocks — is in [sample-config.yml](sample-config.yml) and the [configuration docs](https://fjacquet.github.io/idrac_exporter/).
 
-```text
-http://localhost:9348/metrics?target=192.168.10.10&auth=mygroup
+Because metrics are collected on-demand, a scrape can take a while depending on the enabled groups — set a generous Prometheus `scrape_timeout`.
+
+## Usage
+
+```sh
+idrac_exporter --config /etc/prometheus/idrac.yml
 ```
 
-You may combine `hosts` and `auths` in any way that fits your environment. The login user only needs read-only permissions and it is recommended to create a dedicated unpriviledged user for the exporter.
+| Flag             | Description                                                          |
+| ---------------- | ------------------------------------------------------------------- |
+| `--config`       | Path to the configuration file (default `/etc/prometheus/idrac.yml`)|
+| `--config-watch` | Watch the configuration file and hot-reload on change               |
+| `--verbose`      | More verbose logging                                                 |
+| `--debug`        | Dump raw Redfish JSON responses (implies `--verbose`)               |
+| `--trace`        | Log each Redfish request — method, path, status — without credentials|
+| `--once`         | Collect every configured host once, print the exposition, and exit  |
+| `--version`      | Print version and exit                                               |
 
-**For a detailed description of the configuration, please see the [sample-config.yml](sample-config.yml) file. In this file you can also find the corresponding environment variables for the different configuration options.**
+**Validate against a real BMC without Prometheus** — `--once` collects every configured host a single time and writes the metrics exposition (sorted by target) to stdout, which is handy for a quick check or a diff:
 
-Because the metrics are collected on-demand it can take several minutes to scrape the metrics endpoint, depending on how many metrics groups are selected in the configuration file. For this reason, you should carefully select the metrics of interest and make sure Prometheus is configured with a sufficiently high scrape timeout value.
-
-
-## List of Metrics
-The exporter can expose the metrics described in the sections below. For each metric you can see the name and the associated labels. For all `<name>_health` metrics the value has the following mapping.
-
-* 0 = OK
-* 1 = Warning
-* 2 = Critical
-
-### System
-These metrics include power, health, and LED state, total memory size, number of physical processors, BIOS version and machine information.
-
-```c
-idrac_system_power_on
-idrac_system_health{status}
-idrac_system_indicator_led_on{state} // deprecated, new metric below
-idrac_system_indicator_active
-idrac_system_memory_size_bytes
-idrac_system_cpu_count{model}
-idrac_system_bios_info{version}
-idrac_system_machine_info{manufacturer,model,serial,sku}
+```sh
+idrac_exporter --config config.yml --once
 ```
 
-### Sensors
-These metrics include temperature, FAN health and speeds, and voltage sensor readings.
+**Trace what the exporter does to a BMC** — `--trace` logs every Redfish request (method, path, status) with no credentials, and `--debug` additionally dumps the raw JSON of each response:
 
-```text
-idrac_sensors_temperature{id,name,units}
-idrac_sensors_fan_health{id,name,status}
-idrac_sensors_fan_speed{id,name,units}
-idrac_sensors_voltage{id,name,units}
+```sh
+idrac_exporter --config config.yml --once --trace   # request-level trace
+idrac_exporter --config config.yml --once --debug   # full JSON dump
 ```
-
-### Power
-These metrics include two sets of power readings. The first set is PSU power readings, such as power usage, total power capacity, input voltage and efficiency.
-
-```text
-idrac_power_supply_health{id,status}
-idrac_power_supply_output_watts{id}
-idrac_power_supply_input_watts{id}
-idrac_power_supply_capacity_watts{id}
-idrac_power_supply_input_voltage{id}
-idrac_power_supply_efficiency_percent{id}
-```
-
-The second set is the power consumption for the entire system (and sometimes also for certain subsystems, such as the CPUs). The first two metrics are instantaneous readings, while the last four metrics are the minimum, maximum and average power consumption as measure over the reported interval.
-
-```text
-idrac_power_control_consumed_watts{id,name}
-idrac_power_control_capacity_watts{id,name}
-idrac_power_control_min_consumed_watts{id,name}
-idrac_power_control_max_consumed_watts{id,name}
-idrac_power_control_avg_consumed_watts{id,name}
-idrac_power_control_interval_in_minutes{id,name}
-```
-
-### Processors
-These metrics include information about the CPUs in the system.
-
-```text
-idrac_cpu_info{arch,id,manufacturer,model,socket}
-idrac_cpu_health{id,status}
-idrac_cpu_voltage{id}
-idrac_cpu_max_speed_mhz{id}
-idrac_cpu_current_speed_mhz{id}
-idrac_cpu_total_cores{id}
-idrac_cpu_total_threads{id}
-```
-
-### System Event Log
-This is not exactly an ordinary metric, but it is often convenient to be informed about new entries in the event log. The value of this metric is the Unix timestamp for when the entry was created.
-
-```text
-idrac_events_log_entry{id,message,severity}
-```
-
-### Storage
-The storage metrics are divided into four different groups.
-
-* The first group defines a storage subgroup inside Redfish. All other storage metrics are children of this subgroup.
-* The second group is information about physical drives.
-* The third group is information about storage controllers.
-* The fourth group is information about virtual volumes, such as RAIDs.
-
-There is one last metric for Dell systems, which reports the health status of an associated RAID controller battery (when present).
-
-```text
-idrac_storage_info{id,name}
-idrac_storage_health{id,status}
-
-idrac_storage_drive_info{id,manufacturer,mediatype,model,name,protocol,serial,slot,storage_id}
-idrac_storage_drive_health{id,status,storage_id}
-idrac_storage_drive_capacity_bytes{id,storage_id}
-idrac_storage_drive_life_left_percent{id,storage_id}
-idrac_storage_drive_indicator_active{id,storage_id}
-
-idrac_storage_controller_info{firmware,id,manufacturer,model,name,storage_id}
-idrac_storage_controller_health{id,status,storage_id}
-idrac_storage_controller_speed_mbps{id,storage_id}
-idrac_storage_controller_cache_health{id,status,storage_id}
-idrac_storage_controller_cache_size_bytes{id,storage_id}
-
-idrac_storage_volume_info{id,name,raidtype,storage_id,volumetype}
-idrac_storage_volume_health{id,status,storage_id}
-idrac_storage_volume_capacity_bytes{id,storage_id}
-idrac_storage_volume_media_span_count{id,storage_id}
-
-idrac_dell_controller_battery_health{id,name,status,storage_id}
-```
-
-### Memory
-These metrics include information about memory modules in the machine.
-
-```text
-idrac_memory_module_info{ecc,id,manufacturer,name,rank,serial,type}
-idrac_memory_module_health{id,status}
-idrac_memory_module_capacity_bytes{id}
-idrac_memory_module_speed_mhz{id}
-```
-
-### Network
-These metrics include information about network adapters and network ports.
-
-```text
-idrac_network_adapter_info{id,manufacturer,model,serial}
-idrac_network_adapter_health{id,status}
-idrac_network_port_health{adapter_id,id,status}
-idrac_network_port_max_speed_mbps{adapter_id,id}
-idrac_network_port_current_speed_mbps{adapter_id,id}
-idrac_network_port_link_up{adapter_id,id,status}
-```
-
-### Manager
-These metrics contain information about the out-of-band manager.
-
-```text
-idrac_manager_info{id,firmware,model,type}
-idrac_manager_health{id,status}
-```
-
-### Extra
-These metrics do not belong anywhere else and they might be OEM specific. At the moment only some Dell specific metrics are exported.
-
-```text
-idrac_dell_battery_rollup_health{status}
-idrac_dell_estimated_system_airflow_cfm
-```
-
-### Exporter
-These metrics contain information about the exporter itself, such as build information and how many errors that have been encountered when scraping the Redfish API.
-
-```text
-idrac_exporter_build_info{goversion,revision,version}
-idrac_exporter_scrape_errors_total
-```
-
-### PDUs
-The exporter has _experimental_ support for scraping metrics from PDUs with Redfish support. The following metrics are exported for PDUs.
-
-```text
-idrac_pdu_info{firmware,id,manufacturer,model,serial,type}
-idrac_pdu_health{id,status}
-idrac_pdu_power_apparent_va{id}
-idrac_pdu_power_factor{id}
-idrac_pdu_power_watts{id}
-idrac_pdu_energy_kwh{id}
-```
-
 
 ## Endpoints
-The exporter has several different endpoints.
 
-| Endpoint     | Parameters | Description                                         |
-| ------------ | ---------- | --------------------------------------------------- |
-| `/metrics`   | `target`   | Metrics for the specified target                    |
-| `/reset`     | `target`   | Reset internal state for the specified target       |
-| `/reload`    |            | Trigger a reload of the configuration file          |
-| `/discover`  |            | Endpoint for Prometheus Service Discovery           |
-| `/health`    |            | Returns http status 200 and nothing else            |
+| Endpoint    | Parameters | Description                                   |
+| ----------- | ---------- | --------------------------------------------- |
+| `/metrics`  | `target`   | Metrics for the specified target              |
+| `/reset`    | `target`   | Reset internal state for the specified target |
+| `/reload`   |            | Reload the configuration file                 |
+| `/discover` |            | Prometheus HTTP Service Discovery             |
+| `/health`   |            | Returns HTTP 200                              |
+| `/`         |            | Landing page                                  |
 
+## Prometheus configuration
 
-## Prometheus Configuration
-For the situation where you have a single `idrac_exporter` and multiple hosts to query, the following `prometheus.yml` snippet can be used. Here `192.168.1.1` and `192.168.1.2` are the hosts to query, and `exporter:9348` is the address and port where `idrac_exporter` is running.
+For a single exporter fronting many BMCs, rewrite `target` per host with relabeling (`exporter:9348` is where the exporter runs):
 
 ```yaml
 scrape_configs:
@@ -285,44 +145,45 @@ scrape_configs:
     static_configs:
       - targets: ['192.168.1.1', '192.168.1.2']
     relabel_configs:
+      - source_labels: [__param_target]
+        target_label: __address__
+        # placeholder; the next rules set the real param + address
       - source_labels: [__address__]
         target_label: __param_target
       - source_labels: [__param_target]
         target_label: instance
+      # Expose the BMC as `system` too — the bundled Grafana dashboards key on it.
+      - source_labels: [__param_target]
+        target_label: system
       - target_label: __address__
         replacement: exporter:9348
 ```
 
-You can also use the service discovery mechanism in Prometheus to automatically discover all the targets configured in the configuration file for the exporter. The configuration is quite similar, but instead of static targets we query the discovery endpoint.
+The exporter's `/discover` endpoint can replace the static target list — see the [documentation](https://fjacquet.github.io/idrac_exporter/).
 
-```yaml
-scrape_configs:
-  - job_name: idrac
-    http_sd_configs:
-      - url: http://exporter:9348/discover
-    relabel_configs:
-      - source_labels: [__address__]
-        target_label: __param_target
-      - source_labels: [__param_target]
-        target_label: instance
-      - source_labels: [__meta_url]
-        target_label: __address__
-        regex: (https?.{3})([^\/]+)(.+)
-        replacement: $2
-```
+## Metrics
 
+Every metric is prefixed `idrac_` (configurable). All `<name>_health` metrics map `0 = OK`, `1 = Warning`, `2 = Critical`. Groups: **System, Sensors, Power, Processors, Memory, Network, Storage, Manager, Event Log, PDU** (experimental), Dell OEM extras, and **Exporter** self-metrics. The OTLP/snapshot path additionally emits `idrac_up` (per-host collection health).
 
-## Grafana Dashboard
-There are some different Grafana Dashboards in the `grafana` folder.
+See the full **[metrics catalog](https://fjacquet.github.io/idrac_exporter/metrics/)** ([docs/metrics.md](docs/metrics.md)) for every metric name and its labels.
 
-Example of [grafana/idrac.json](grafana/idrac.json) which shows detailed information about individual machines. Made by [@7840vz](https://www.github.com/7840vz).
+## Dashboards
 
-![bmc1.png](grafana/bmc1.png)
+Grafana dashboards live in [`grafana/`](grafana/) and are auto-provisioned by the Compose quickstart against the bundled Prometheus datasource:
 
-Example of [grafana/idrac_overview.json](grafana/idrac_overview.json) which shows a global overview of all machines. Made by [@7840vz](https://www.github.com/7840vz).
+| Dashboard | File | Focus |
+| --------- | ---- | ----- |
+| BMC | `grafana/idrac.json` | Per-machine detail |
+| BMC overview | `grafana/idrac_overview.json` | Fleet overview + health |
+| BMC Status | `grafana/status-alternative.json` | Alternative per-machine status |
+| PDU | `grafana/pdu.json` | Rack PDU power, energy, health |
 
-![bmc2.png](grafana/bmc2.png)
+All dashboards select hosts via a single `system` template variable. The overview/detail dashboards were contributed by [@7840vz](https://github.com/7840vz). See [Dashboards](https://fjacquet.github.io/idrac_exporter/dashboards/).
 
-Example of [grafana/status-alternative.json](grafana/status-alternative.json) which shows detailed information for individual machines.
+## Contributing
 
-![alternative.png](grafana/alternative.png)
+Issues and pull requests are welcome. Prefer metrics that work **across vendors** (see [CONTRIBUTING.md](CONTRIBUTING.md)). The CI gate is `make ci`.
+
+## License
+
+[MIT](LICENSE)
