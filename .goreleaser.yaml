@@ -48,7 +48,11 @@ checksum:
 
 sboms:
   - id: cyclonedx-gomod
-    artifacts: archive
+    # artifacts: any runs the SBOM command once and emits a single module-level
+    # SBOM (matches the rest of the exporter family). Using `archive` instead runs
+    # it per-archive; a fixed document name then collides on upload (422
+    # already_exists), which is why the name must be unique if `archive` is used.
+    artifacts: any
     cmd: cyclonedx-gomod
     args:
       - mod
@@ -58,9 +62,7 @@ sboms:
       - $document
       - ../
     documents:
-      # Per-archive unique name. A fixed name collides across the 6 archives and
-      # fails the release with a 422 "already_exists" on the duplicate upload.
-      - "{{ .ArtifactName }}.sbom.json"
+      - "{{ .ProjectName }}_{{ .Version }}.sbom.cdx.json"
 
 homebrew_casks:
   - name: idrac_exporter
