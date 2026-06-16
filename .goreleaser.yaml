@@ -58,7 +58,9 @@ sboms:
       - $document
       - ../
     documents:
-      - "{{ .ProjectName }}_{{ .Version }}.sbom.json"
+      # Per-archive unique name. A fixed name collides across the 6 archives and
+      # fails the release with a 422 "already_exists" on the duplicate upload.
+      - "{{ .ArtifactName }}.sbom.json"
 
 homebrew_casks:
   - name: idrac_exporter
