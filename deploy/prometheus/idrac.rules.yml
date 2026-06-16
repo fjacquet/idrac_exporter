@@ -48,6 +48,15 @@ groups:
           summary: "Storage drive {{ $labels.id }} failed"
           description: "Drive health={{ $value }} (2=Critical). See idrac_storage_drive_info."
 
+      - alert: IdracHostDown
+        expr: idrac_up == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "iDRAC host {{ $labels.system }} is down (OTLP/snapshot path)"
+          description: "idrac_up == 0 for host {{ $labels.system }}. This alert covers the OTLP/snapshot path; the scrape path is covered by IdracExporterTargetDown."
+
       - alert: IdracScrapeErrors
         expr: increase(idrac_exporter_scrape_errors_total[15m]) > 0
         for: 5m

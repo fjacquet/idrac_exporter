@@ -36,6 +36,9 @@ exclude_docs: |
 
 nav:
   - Home: index.md
+  - Installation: installation.md
+  - Configuration: configuration.md
+  - Usage: usage.md
   - Deployment:
       - Docker Compose: deployment/docker.md
   - Dashboards: dashboards.md

@@ -37,7 +37,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "${datasource}"
       },
       "description": "",
       "fieldConfig": {
@@ -90,11 +90,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "idrac_system_machine_info{instance=\"$instance\"}",
+          "expr": "idrac_system_machine_info{system=~\"$system\"}",
           "format": "time_series",
           "instant": true,
           "legendFormat": "{{manufacturer}}",
@@ -108,7 +108,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -182,11 +182,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "idrac_system_health{instance=\"$instance\"}",
+          "expr": "idrac_system_health{system=~\"$system\"}",
           "instant": true,
           "legendFormat": "Health",
           "range": false,
@@ -199,7 +199,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -273,11 +273,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "max(idrac_memory_module_health{instance=\"$instance\"} < 10)",
+          "expr": "max(idrac_memory_module_health{system=~\"$system\"} < 10)",
           "instant": true,
           "legendFormat": "Health",
           "range": false,
@@ -290,7 +290,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -364,11 +364,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "max(idrac_network_adapter_health{instance=\"$instance\"} < 10)",
+          "expr": "max(idrac_network_adapter_health{system=~\"$system\"} < 10)",
           "instant": true,
           "legendFormat": "Health",
           "range": false,
@@ -381,7 +381,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -465,11 +465,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sort_desc(sum by (id,message,severity) (idrac_events_log_entry{instance=\"$instance\"}*1000))",
+          "expr": "sort_desc(sum by (id,message,severity) (idrac_events_log_entry{system=~\"$system\"}*1000))",
           "format": "table",
           "instant": true,
           "legendFormat": "__auto",
@@ -507,7 +507,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "${datasource}"
       },
       "description": "",
       "fieldConfig": {
@@ -560,11 +560,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "idrac_system_machine_info{instance=\"$instance\"}",
+          "expr": "idrac_system_machine_info{system=~\"$system\"}",
           "instant": true,
           "legendFormat": "{{model}}",
           "range": false,
@@ -577,7 +577,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "${datasource}"
       },
       "description": "",
       "fieldConfig": {
@@ -630,11 +630,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "idrac_system_machine_info{instance=\"$instance\"}",
+          "expr": "idrac_system_machine_info{system=~\"$system\"}",
           "instant": true,
           "legendFormat": "{{serial}}",
           "range": false,
@@ -647,7 +647,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -721,11 +721,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "max(idrac_sensors_fan_health{instance=\"$instance\"} < 10)",
+          "expr": "max(idrac_sensors_fan_health{system=~\"$system\"} < 10)",
           "instant": true,
           "legendFormat": "Health",
           "range": false,
@@ -738,7 +738,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -812,11 +812,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "max(idrac_power_supply_health{instance=\"$instance\"} < 10)",
+          "expr": "max(idrac_power_supply_health{system=~\"$system\"} < 10)",
           "instant": true,
           "legendFormat": "Health",
           "range": false,
@@ -829,7 +829,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -903,11 +903,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "max(idrac_storage_drive_health{instance=\"$instance\"} < 10)",
+          "expr": "max(idrac_storage_drive_health{system=~\"$system\"} < 10)",
           "instant": true,
           "legendFormat": "Health",
           "range": false,
@@ -920,7 +920,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "${datasource}"
       },
       "description": "",
       "fieldConfig": {
@@ -973,11 +973,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "idrac_system_machine_info{instance=\"$instance\"}",
+          "expr": "idrac_system_machine_info{system=~\"$system\"}",
           "instant": true,
           "legendFormat": "{{sku}}",
           "range": false,
@@ -1003,7 +1003,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1089,10 +1089,10 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "idrac_sensors_temperature{instance=\"$instance\",name=~\".*(Inlet|Ambient|Exhaust).*\"}",
+          "expr": "idrac_sensors_temperature{system=~\"$system\",name=~\".*(Inlet|Ambient|Exhaust).*\"}",
           "instant": false,
           "legendFormat": "{{name}}",
           "range": true,
@@ -1105,7 +1105,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1191,10 +1191,10 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "idrac_sensors_temperature{instance=\"$instance\",name=~\".*(CPU).*\"}",
+          "expr": "idrac_sensors_temperature{system=~\"$system\",name=~\".*(CPU).*\"}",
           "instant": false,
           "legendFormat": "{{name}}",
           "range": true,
@@ -1207,7 +1207,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1289,10 +1289,10 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "avg by (instance) (idrac_power_control_consumed_watts{instance=\"$instance\",name=~\".*Power Control|\"} > 0 or idrac_power_control_avg_consumed_watts{instance=\"$instance\",name=~\".*Power Control|\"})",
+          "expr": "avg by (instance) (idrac_power_control_consumed_watts{system=~\"$system\",name=~\".*Power Control|\"} > 0 or idrac_power_control_avg_consumed_watts{system=~\"$system\",name=~\".*Power Control|\"})",
           "instant": false,
           "legendFormat": "Power",
           "range": true,
@@ -1305,7 +1305,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1387,10 +1387,10 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "idrac_sensors_fan_speed{instance=\"$instance\"}",
+          "expr": "idrac_sensors_fan_speed{system=~\"$system\"}",
           "instant": false,
           "legendFormat": "{{name}}",
           "range": true,
@@ -1416,7 +1416,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1531,11 +1531,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (id,manufacturer,name,serial,type) (idrac_memory_module_info{instance=\"$instance\"})",
+          "expr": "sum by (id,manufacturer,name,serial,type) (idrac_memory_module_info{system=~\"$system\"})",
           "format": "table",
           "instant": true,
           "legendFormat": "__auto",
@@ -1545,11 +1545,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (id,status) (idrac_memory_module_health{instance=\"$instance\"})",
+          "expr": "sum by (id,status) (idrac_memory_module_health{system=~\"$system\"})",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -1560,11 +1560,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (id) (idrac_memory_module_capacity_bytes{instance=\"$instance\"})",
+          "expr": "sum by (id) (idrac_memory_module_capacity_bytes{system=~\"$system\"})",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -1575,11 +1575,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (id) (idrac_memory_module_speed_mhz{instance=\"$instance\"})",
+          "expr": "sum by (id) (idrac_memory_module_speed_mhz{system=~\"$system\"})",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -1660,7 +1660,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1801,11 +1801,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (id,adapter_id) (idrac_network_port_link_up{instance=\"$instance\"})",
+          "expr": "sum by (id,adapter_id) (idrac_network_port_link_up{system=~\"$system\"})",
           "format": "table",
           "instant": true,
           "legendFormat": "__auto",
@@ -1815,11 +1815,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (id,adapter_id,status) (idrac_network_port_health{instance=\"$instance\"})",
+          "expr": "sum by (id,adapter_id,status) (idrac_network_port_health{system=~\"$system\"})",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -1830,11 +1830,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (id,adapter_id) (idrac_network_port_max_speed_mbps{instance=\"$instance\"})",
+          "expr": "sum by (id,adapter_id) (idrac_network_port_max_speed_mbps{system=~\"$system\"})",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -1845,11 +1845,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (id,adapter_id) (idrac_network_port_current_speed_mbps{instance=\"$instance\"})",
+          "expr": "sum by (id,adapter_id) (idrac_network_port_current_speed_mbps{system=~\"$system\"})",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -1860,11 +1860,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (manufacturer,model,adapter_id) (label_replace(idrac_network_adapter_info{instance=\"$instance\"}, \"adapter_id\", \"$1\", \"id\", \"(.+)\"))",
+          "expr": "sum by (manufacturer,model,adapter_id) (label_replace(idrac_network_adapter_info{system=~\"$system\"}, \"adapter_id\", \"$1\", \"id\", \"(.+)\"))",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -1939,7 +1939,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2022,11 +2022,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (id,storage_id,manufacturer,mediatype,model,name,protocol,serial) (idrac_storage_drive_info{instance=\"$instance\"})",
+          "expr": "sum by (id,storage_id,manufacturer,mediatype,model,name,protocol,serial) (idrac_storage_drive_info{system=~\"$system\"})",
           "format": "table",
           "instant": true,
           "legendFormat": "__auto",
@@ -2036,11 +2036,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (id,storage_id,status) (idrac_storage_drive_health{instance=\"$instance\"})",
+          "expr": "sum by (id,storage_id,status) (idrac_storage_drive_health{system=~\"$system\"})",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -2051,11 +2051,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (id,storage_id) (idrac_storage_drive_capacity_bytes{instance=\"$instance\"})",
+          "expr": "sum by (id,storage_id) (idrac_storage_drive_capacity_bytes{system=~\"$system\"})",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -2066,11 +2066,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (id,storage_id) (idrac_storage_drive_life_left_percent{instance=\"$instance\"})",
+          "expr": "sum by (id,storage_id) (idrac_storage_drive_life_left_percent{system=~\"$system\"})",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -2134,7 +2134,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2293,11 +2293,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (arch,id,manufacturer,model,socket) (idrac_cpu_info{instance=\"$instance\"})",
+          "expr": "sum by (arch,id,manufacturer,model,socket) (idrac_cpu_info{system=~\"$system\"})",
           "format": "table",
           "instant": true,
           "legendFormat": "__auto",
@@ -2307,11 +2307,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (id,status) (idrac_cpu_health{instance=\"$instance\"})",
+          "expr": "sum by (id,status) (idrac_cpu_health{system=~\"$system\"})",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -2322,11 +2322,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (id) (idrac_cpu_total_cores{instance=\"$instance\"})",
+          "expr": "sum by (id) (idrac_cpu_total_cores{system=~\"$system\"})",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -2337,11 +2337,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (id) (idrac_cpu_total_threads{instance=\"$instance\"})",
+          "expr": "sum by (id) (idrac_cpu_total_threads{system=~\"$system\"})",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -2352,11 +2352,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (id) (idrac_cpu_max_speed_mhz{instance=\"$instance\"})",
+          "expr": "sum by (id) (idrac_cpu_max_speed_mhz{system=~\"$system\"})",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -2367,11 +2367,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (id) (idrac_cpu_current_speed_mhz{instance=\"$instance\"})",
+          "expr": "sum by (id) (idrac_cpu_current_speed_mhz{system=~\"$system\"})",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -2452,7 +2452,7 @@
       {
         "includeAll": false,
         "label": "Datasource",
-        "name": "DS_PROMETHEUS",
+        "name": "datasource",
         "options": [],
         "query": "prometheus",
         "refresh": 1,
@@ -2462,21 +2462,22 @@
       {
         "datasource": {
           "type": "prometheus",
-          "uid": "${DS_PROMETHEUS}"
+          "uid": "${datasource}"
         },
-        "definition": "label_values(idrac_exporter_build_info,instance)",
-        "includeAll": false,
-        "label": "Instance",
-        "name": "instance",
+        "definition": "label_values(idrac_system_machine_info, system)",
+        "includeAll": true,
+        "label": "System",
+        "multi": true,
+        "name": "system",
         "options": [],
         "query": {
           "qryType": 1,
-          "query": "label_values(idrac_exporter_build_info,instance)",
+          "query": "label_values(idrac_system_machine_info, system)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
-        "refresh": 1,
+        "refresh": 2,
         "regex": "",
-        "sort": 7,
+        "sort": 1,
         "type": "query"
       }
     ]
