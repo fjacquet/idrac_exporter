@@ -103,7 +103,7 @@ func run(_ *cobra.Command, _ []string) error {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	ln, err := net.Listen("tcp", bind)
+	ln, err := (&net.ListenConfig{}).Listen(ctx, "tcp", bind)
 	if err != nil {
 		return err
 	}

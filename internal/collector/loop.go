@@ -54,7 +54,11 @@ func hostTargets() []string {
 }
 
 func (l *Loop) collectOnce() {
+	config.Config.Mutex.Lock()
 	key := config.Config.OTLP.IdentityLabel
+	concurrency := config.Config.Concurrency
+	config.Config.Mutex.Unlock()
+
 	targets := hostTargets()
 
 	var accMu sync.Mutex
@@ -70,7 +74,7 @@ func (l *Loop) collectOnce() {
 			accMu.Unlock()
 		})
 	}
-	runLimited(config.Config.Concurrency, tasks)
+	runLimited(concurrency, tasks)
 
 	l.store.Store(buildSnapshot(perHost))
 }

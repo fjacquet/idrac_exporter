@@ -210,6 +210,12 @@ func (c *RootConfig) Validate() error {
 	if c.OTLP.IntervalSeconds == 0 {
 		c.OTLP.IntervalSeconds = c.Collection.IntervalSeconds
 	}
+	if c.Collection.IntervalSeconds <= 0 {
+		return fmt.Errorf("collection interval must be positive: %q", c.Collection.Interval)
+	}
+	if c.OTLP.IntervalSeconds <= 0 {
+		return fmt.Errorf("otlp interval must be positive: %q", c.OTLP.Interval)
+	}
 
 	return nil
 }

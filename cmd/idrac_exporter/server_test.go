@@ -11,7 +11,7 @@ import (
 // TestServeShutsDownOnContextCancel asserts serve returns nil promptly once the
 // context is cancelled, having gracefully shut the server down.
 func TestServeShutsDownOnContextCancel(t *testing.T) {
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	ln, err := (&net.ListenConfig{}).Listen(context.Background(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("listen: %v", err)
 	}

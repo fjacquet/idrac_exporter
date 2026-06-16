@@ -41,6 +41,15 @@ func TestOTLPIntervalZeroInheritsCollection(t *testing.T) {
 	}
 }
 
+func TestValidateRejectsNonPositiveCollectionInterval(t *testing.T) {
+	c := NewConfig()
+	c.Hosts["default"] = &AuthConfig{Username: "u", Password: "p"}
+	c.Collection.Interval = "0s"
+	if err := c.Validate(); err == nil {
+		t.Fatal("expected error for a zero collection interval (would panic time.NewTicker)")
+	}
+}
+
 func TestOTLPConfigInvalidProtocol(t *testing.T) {
 	c := NewConfig()
 	c.Hosts["default"] = &AuthConfig{Username: "u", Password: "p"}
