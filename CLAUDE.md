@@ -34,17 +34,22 @@ Key flags: `--config <path>` (default `/etc/prometheus/idrac.yml`), `--config-wa
 
 `/reset?target=` drops a target's cached collector (forces fresh discovery + session). `/reload` re-reads config and resets only hosts whose credentials changed.
 
+**Optional OTLP path (Phase 4, off by default).** When `otlp.enabled` is set, a background `Loop` (`loop.go`) polls every configured `hosts:` entry on `collection.interval`, reuses the same per-target collectors via `GatherFamilies()`, injects a `system` identity label + an `idrac_up` gauge, and stores an immutable snapshot an OTLP exporter pushes (through the OpenTelemetry Prometheus bridge). The on-demand `/metrics?target=` path is untouched and stays primary.
+
 ## Package layout
 
-- `cmd/idrac_exporter/` — `main.go` (flags, routing, listener), `handler.go` (HTTP handlers, gzip), `config.go` (load/reload/watch wiring).
-- `internal/config/` — `model.go` (config structs), `config.go` (file load + `Validate`), `env.go` (env-var overrides), `discover.go` (Prometheus SD JSON). Global singleton `config.Config` guarded by `Config.Mutex`.
+- `cmd/idrac_exporter/` — `main.go` (cobra flags, routing), `server.go` (graceful serve helper + signal-context lifecycle), `signals.go` (SIGHUP reload), `handler.go` (HTTP handlers, gzip), `once.go` (`--once`: collect every host once and print exposition), `config.go` (load/reload/watch wiring).
+- `internal/config/` — `model.go` (config structs), `config.go` (file load + `Validate`), `env.go` (env-var overrides), `dotenv.go` (`.env` loading), `discover.go` (Prometheus SD JSON). Global singleton `config.Config` guarded by `Config.Mutex`.
 - `internal/collector/` — the bulk of the code:
-  - `collector.go` — implements `prometheus.Collector`; declares every metric `*prometheus.Desc`; per-target cache; collection concurrency/coalescing.
+  - `collector.go` — implements `prometheus.Collector`; declares every metric `*prometheus.Desc`; per-target cache; collection concurrency/coalescing; `GatherFamilies()` (coalescing-safe, shared by on-demand and the loop).
   - `client.go` — Redfish endpoint discovery, **vendor constants** (`DELL`, `HPE`, …), and all `RefreshXxx` collection methods.
   - `redfish.go` — HTTP transport, Redfish session auth (with HTTP basic-auth fallback), `Get`/`Exists`.
   - `metrics.go` — `NewXxx` helpers that translate parsed structs into `prometheus.MustNewConstMetric` emissions; value mappers like `health2value` (OK=0, Warning=1, Critical=2).
   - `model.go` — Go structs mirroring Redfish JSON responses.
   - `unmarshal.go` — `xstring` (tolerant JSON field that may be null/string/number/`[{"Member":…}]`) and coercion helpers.
+  - `loop.go` — the optional background snapshot loop over configured `hosts:` (Phase 4; off by default).
+  - `snapshot.go` — immutable `Snapshot` + `SnapshotStore` (atomic-swap `prometheus.Gatherer`); identity-label injection and the per-host `idrac_up` gauge.
+  - `otlp.go` — OTLP exporter fed from the snapshot via the OpenTelemetry Prometheus bridge ([ADR 0009](docs/adr/0009-otlp-via-prometheus-bridge.md)).
 - `internal/version/`, `internal/log/` — build-info vars and a small leveled logger.
 
 ## Conventions when extending
@@ -64,15 +69,15 @@ Key flags: `--config <path>` (default `/etc/prometheus/idrac.yml`), `--config-wa
 
 ## Configuration
 
-YAML config (`sample-config.yml` is the documented reference) is loaded, then **environment variables override** file values (`CONFIG_*`), then `Validate()` fills defaults. `${VAR}` references inside the YAML are expanded from the environment. Credentials live under `hosts:` (keyed by target IP/hostname, with a `default:` fallback) or `auths:` (named groups referenced via the `?auth=` query param). Metric groups are toggled under `metrics:` (`all: true` enables everything).
+YAML config (`sample-config.yml` is the documented reference) is loaded, then **environment variables override** file values (`CONFIG_*`), then `Validate()` fills defaults. `${VAR}` references inside the YAML are expanded from the environment. Credentials live under `hosts:` (keyed by target IP/hostname, with a `default:` fallback) or `auths:` (named groups referenced via the `?auth=` query param). Metric groups are toggled under `metrics:` (`all: true` enables everything). `default_target` sets the BMC scraped when `/metrics` is called without `?target=`. The optional snapshot loop is configured under `collection:` (`interval`) and `otlp:` (`enabled`, `endpoint`, `protocol`, `insecure`, `interval`, `identity_label` — default `system`); both default off, and `Validate()` requires positive intervals.
 
 ## Release / CI
 
 GitHub Actions (`.github/workflows/`): `ci.yml` (`make ci` + SBOM + semgrep on PRs/push), `release.yml` (GoReleaser binaries/SBOM/Release + multi-arch GHCR image on `v*` tags), `docs.yml` (MkDocs Material → Pages), and `helm-charts.yml` (chart publishing on `charts/**`). Actions are SHA-pinned; releases are driven by `.goreleaser.yaml`. The Helm chart lives in `charts/idrac-exporter/`.
 
-## Family-standard recovery (in progress)
+## Family-standard recovery (complete)
 
-This fork is being brought to the exporter-standards family conformance. Design specs live in `docs/superpowers/specs/` (program overview + per-phase) and decisions in `docs/adr/`. Phase 1 (build/CI/docs scaffolding) is landing; Phases 2–5 follow: cobra/logrus/errgroup/resty migration, payload realignment against `docs/swagger/`, an optional OTLP snapshot loop, and the compose quickstart. The on-demand `?target=` collection model is preserved ([ADR 0002](docs/adr/0002-multi-target-with-optional-otlp.md)).
+This fork was brought to exporter-standards family conformance across five merged phases (specs in `docs/superpowers/specs/`, decisions in `docs/adr/`): (1) universal layer — Go pin, Makefile/CI, supply-chain, non-root image, MkDocs; (2) cobra/logrus/errgroup migration; (3) payload realignment + absent-not-zero hardening; (4) the optional hybrid OTLP snapshot loop; (5) the Docker Compose quickstart + Grafana dashboards. It is a **hard fork** — it no longer tracks upstream `mrlhansen/idrac_exporter`. The on-demand `?target=` model remains primary ([ADR 0002](docs/adr/0002-multi-target-with-optional-otlp.md)); the OTLP push loop is additive and off by default.
 
 <!-- rtk-instructions v2 -->
 # RTK (Rust Token Killer) - Token-Optimized Commands
