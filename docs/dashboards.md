@@ -13,6 +13,20 @@ The repository ships Grafana dashboards under `grafana/`, auto-provisioned by th
 The overview and detail dashboards were contributed by
 [@7840vz](https://github.com/7840vz).
 
+## Previews
+
+Per-machine detail (`grafana/idrac.json`):
+
+![Per-machine detail dashboard](https://raw.githubusercontent.com/fjacquet/idrac_exporter/main/grafana/bmc1.png)
+
+Fleet overview (`grafana/idrac_overview.json`):
+
+![Fleet overview dashboard](https://raw.githubusercontent.com/fjacquet/idrac_exporter/main/grafana/bmc2.png)
+
+Alternative per-machine status (`grafana/status-alternative.json`):
+
+![Alternative status dashboard](https://raw.githubusercontent.com/fjacquet/idrac_exporter/main/grafana/alternative.png)
+
 ## Conventions
 
 - Panels read from the provisioned `Prometheus` datasource and key off a single **`system`**
