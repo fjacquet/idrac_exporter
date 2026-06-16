@@ -28,12 +28,14 @@ Both are pre-existing (present at the merge base); Phase 2b correctly scoped aro
 ### 1. `config.Snapshot()` (`internal/config/`)
 
 - Add an exported value type, e.g.:
+
   ```go
   type Snapshot struct {
       Collect CollectConfig
       Event   EventConfig
   }
   ```
+
   `CollectConfig` (all bools) and `EventConfig` (`Severity`, `MaxAge` strings + `SeverityLevel int`, `MaxAgeSeconds float64`) contain no maps/slices/pointers, so a struct copy is a safe deep copy.
 - Add `func Snapshot() Snapshot` that locks `Config.Mutex`, copies the two fields, unlocks, and returns the value.
 
@@ -49,6 +51,7 @@ Both are pre-existing (present at the merge base); Phase 2b correctly scoped aro
 ### 3. Watcher reorder (`cmd/idrac_exporter/config.go`)
 
 Reorder the `watcher.Events` handler so the re-add precedes the dedup gate:
+
 ```go
 if !shouldReload(event) {
     break

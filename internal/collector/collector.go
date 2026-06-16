@@ -542,7 +542,7 @@ func (collector *Collector) refresh(name string, fn func() bool) {
 }
 
 func (collector *Collector) CollectServer(ch chan<- prometheus.Metric) {
-	collect := &config.Config.Collect
+	collect := &collector.client.cfg.Collect
 	client := collector.client
 	var tasks []func()
 
@@ -616,6 +616,11 @@ func (collector *Collector) CollectServer(ch chan<- prometheus.Metric) {
 }
 
 func (collector *Collector) Collect(ch chan<- prometheus.Metric) {
+	// Capture a consistent config snapshot for the entire gather. This must
+	// happen before any CollectXxx fan-out so every metric group in this scrape
+	// reads the same Collect/Event values without holding Config.Mutex throughout.
+	collector.client.cfg = config.TakeSnapshot()
+
 	collector.client.redfish.RefreshSession()
 
 	if len(collector.client.path.RackPDUs) > 0 {

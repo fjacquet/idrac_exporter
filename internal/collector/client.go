@@ -30,6 +30,7 @@ type Client struct {
 	redfish *Redfish
 	vendor  int
 	version int
+	cfg     config.ConfigSnapshot
 	path    struct {
 		System           string
 		Thermal          string
@@ -69,6 +70,11 @@ func (client *Client) findAllEndpoints() bool {
 	var system SystemResponse
 	var path string
 	var ok bool
+
+	// Snapshot the config for path-discovery decisions. Discovery runs once at
+	// client creation time (outside a gather), so we take our own snapshot here
+	// rather than relying on client.cfg which is only populated at gather time.
+	initSnap := config.TakeSnapshot()
 
 	// Root
 	ok = client.redfish.Get(redfishRootPath, &root)
@@ -172,7 +178,7 @@ func (client *Client) findAllEndpoints() bool {
 	}
 
 	// Path for manager
-	if config.Config.Collect.Manager {
+	if initSnap.Collect.Manager {
 		ok = client.redfish.Get(root.Managers.OdataId, &group)
 		if ok && len(group.Members) > 0 {
 			client.path.Manager = group.Members[0].OdataId
@@ -180,7 +186,7 @@ func (client *Client) findAllEndpoints() bool {
 	}
 
 	// Path for event log
-	if config.Config.Collect.Events {
+	if initSnap.Collect.Events {
 		switch client.vendor {
 		case DELL:
 			{
@@ -214,7 +220,7 @@ func (client *Client) findAllEndpoints() bool {
 	}
 
 	// Extra
-	if config.Config.Collect.Extra {
+	if initSnap.Collect.Extra {
 		if client.vendor == DELL {
 			if client.redfish.Exists(DellSystemPath) {
 				client.path.Extra = append(client.path.Extra, DellSystemPath)
@@ -669,7 +675,7 @@ func (client *Client) RefreshPowerOld(mc *Collector, ch chan<- prometheus.Metric
 	// Voltage sensors belong to the sensors metrics group, but the data lives
 	// in the Power response fetched above, so when both groups are enabled they
 	// are emitted here at no additional cost.
-	if config.Config.Collect.Sensors {
+	if client.cfg.Collect.Sensors {
 		client.emitVoltages(mc, ch, &resp)
 	}
 
@@ -740,8 +746,8 @@ func (client *Client) RefreshEventLog(mc *Collector, ch chan<- prometheus.Metric
 		}
 	}
 
-	level := config.Config.Event.SeverityLevel
-	maxage := config.Config.Event.MaxAgeSeconds
+	level := client.cfg.Event.SeverityLevel
+	maxage := client.cfg.Event.MaxAgeSeconds
 
 	for _, e := range resp.Members {
 		t, err := time.Parse(time.RFC3339, e.Created)

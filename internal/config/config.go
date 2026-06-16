@@ -15,6 +15,28 @@ var Debug bool = false
 var Trace bool = false
 var Config *RootConfig = nil
 
+// ConfigSnapshot holds a point-in-time copy of the fields that change on
+// config reload and are read concurrently by the collector during a scrape.
+// Both fields are all-scalar structs (bools, strings, ints, float64), so a
+// plain struct copy is a safe deep copy — no pointers or maps involved.
+type ConfigSnapshot struct {
+	Collect CollectConfig
+	Event   EventConfig
+}
+
+// TakeSnapshot locks Config.Mutex, copies the Collect and Event fields into a
+// ConfigSnapshot value, unlocks, and returns the copy. The name avoids
+// shadowing the Snapshot type or the method receiver.
+func TakeSnapshot() ConfigSnapshot {
+	Config.Mutex.Lock()
+	snap := ConfigSnapshot{
+		Collect: Config.Collect,
+		Event:   Config.Event,
+	}
+	Config.Mutex.Unlock()
+	return snap
+}
+
 func (c *AuthConfig) Validate() error {
 	if c == nil {
 		return fmt.Errorf("empty section")

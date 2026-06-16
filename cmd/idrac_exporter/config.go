@@ -73,19 +73,21 @@ func WatchConfig(filename string) {
 			if !ok {
 				return
 			}
-			if time.Since(lastReload) < time.Second {
-				break // deduplicate bursts of write events
-			}
 			if !shouldReload(event) {
 				break
 			}
-			// Editors save via rename/replace, which drops the watch; re-add it.
+			// Always re-attach the watch on rename/remove — atomic saves swap the
+			// inode and the kernel drops the watch on the old one. This must never
+			// be suppressed by the dedup gate below.
 			if event.Has(fsnotify.Remove) || event.Has(fsnotify.Rename) {
 				_ = watcher.Remove(event.Name)
 				if !readd(watcher, filename) {
 					log.Error("Stopped watching %s after repeated re-add failures", filename)
 					return
 				}
+			}
+			if time.Since(lastReload) < time.Second {
+				break // dedup only the reload itself, not the watch re-attach
 			}
 			lastReload = time.Now()
 			ReloadConfig(filename)
