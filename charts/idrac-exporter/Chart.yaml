@@ -3,9 +3,9 @@ name: idrac-exporter
 description: Chart for iDRAC Exporter
 type: application
 
-# This is the chart version. This version number should be incremented each time you make changes
-# to the chart and its templates, including the app version.
-# Versions are expected to follow Semantic Versioning (https://semver.org/)
+# Baseline version for local installs from source. On a release, CI overrides
+# both `version` and `appVersion` from the git tag (.github/workflows/helm-charts.yml),
+# so the published OCI chart always matches the app release — no manual bump needed.
 version: "1.0.0"
 
 # This is the version number of the application being deployed. This version number should be
