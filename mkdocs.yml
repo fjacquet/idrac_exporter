@@ -56,3 +56,6 @@ nav:
       - 0007 Config hot reload: adr/0007-config-hot-reload.md
       - 0008 Absent, never zero: adr/0008-absent-not-zero-parsing.md
       - 0009 OTLP via Prometheus bridge: adr/0009-otlp-via-prometheus-bridge.md
+
+extra:
+  version: v1.0.1
