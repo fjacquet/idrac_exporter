@@ -53,9 +53,13 @@ func hostTargets() []string {
 	return targets
 }
 
-func (l *Loop) collectOnce() {
+// collectAllHosts collects every configured host (minus the "default"
+// credential fallback) concurrently and returns the merged, sorted Snapshot.
+// names are the identity label keys injected per host (each set to the host
+// value); coerceUntyped controls whether UNTYPED families are converted to
+// GAUGE (true for OTLP, false for the pull exposition path).
+func collectAllHosts(names []string, coerceUntyped bool) *Snapshot {
 	config.Config.Mutex.Lock()
-	key := config.Config.OTLP.IdentityLabel
 	concurrency := config.Config.Concurrency
 	config.Config.Mutex.Unlock()
 
@@ -68,7 +72,7 @@ func (l *Loop) collectOnce() {
 	for _, target := range targets {
 		target := target
 		tasks = append(tasks, func() {
-			fams := gatherTarget(target, []string{key}, true)
+			fams := gatherTarget(target, names, coerceUntyped)
 			accMu.Lock()
 			perHost = append(perHost, fams)
 			accMu.Unlock()
@@ -76,7 +80,15 @@ func (l *Loop) collectOnce() {
 	}
 	runLimited(concurrency, tasks)
 
-	l.store.Store(buildSnapshot(perHost))
+	return buildSnapshot(perHost)
+}
+
+func (l *Loop) collectOnce() {
+	config.Config.Mutex.Lock()
+	key := config.Config.OTLP.IdentityLabel
+	config.Config.Mutex.Unlock()
+
+	l.store.Store(collectAllHosts([]string{key}, true))
 }
 
 // gatherTarget collects one host and returns its families with every name in
