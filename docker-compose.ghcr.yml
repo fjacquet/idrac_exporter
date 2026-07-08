@@ -1,6 +1,9 @@
 # Pull-based stack: runs the published GHCR image instead of building locally.
+# Runs in scrape-all mode (config.yaml leaves default_target empty), so a bare
+# /metrics returns every configured host and the dashboards show them all.
 #
 #   IDRAC1_PASSWORD='...' docker compose -f docker-compose.ghcr.yml up -d
+#   # two BMCs: IDRAC1_HOST=10.0.0.10 IDRAC2_HOST=10.0.0.11 IDRAC1_PASSWORD='...' docker compose -f docker-compose.ghcr.yml up -d
 #
 # Pin a version with IDRAC_TAG (defaults to :latest):
 #   IDRAC_TAG=2.6.1 IDRAC1_PASSWORD='...' docker compose -f docker-compose.ghcr.yml up -d
@@ -16,6 +19,10 @@ services:
       - IDRAC1_HOST=${IDRAC1_HOST:-192.168.1.1}
       - IDRAC1_USERNAME=${IDRAC1_USERNAME:-root}
       - IDRAC1_PASSWORD=${IDRAC1_PASSWORD:-}
+      # Second demo host. Its credentials default to the first host's unless set.
+      - IDRAC2_HOST=${IDRAC2_HOST:-192.168.1.2}
+      - IDRAC2_USERNAME=${IDRAC2_USERNAME:-${IDRAC1_USERNAME:-root}}
+      - IDRAC2_PASSWORD=${IDRAC2_PASSWORD:-${IDRAC1_PASSWORD:-}}
     restart: unless-stopped
 
   prometheus:

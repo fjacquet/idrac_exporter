@@ -7,17 +7,27 @@ rule_files:
   - /etc/prometheus/idrac.rules.yml
 
 scrape_configs:
-  # Single-target quickstart: the exporter scrapes its `default_target`, so
-  # Prometheus hits /metrics directly. For a fleet, replace this with the
-  # multi-target relabel pattern from the README (one entry per BMC, rewriting
-  # __param_target -> idrac_exporter:9348).
+  # Scrape-all quickstart: config.yaml leaves `default_target` empty, so a bare
+  # /metrics collects EVERY configured host in one scrape, each series labeled
+  # instance="<bmc>" and system="<bmc>". honor_labels keeps those exporter-set
+  # labels (without it, Prometheus would overwrite `instance` with the exporter
+  # address). The dashboards' `system` variable then lists every host.
   - job_name: idrac
+    honor_labels: true
     metrics_path: /metrics
     static_configs:
       - targets: ["idrac_exporter:9348"]
-        labels:
-          system: demo-bmc
-    # For a multi-target fleet, set `system` per BMC via relabel instead:
+    # Prefer per-target scraping (one entry per BMC via /metrics?target=<bmc>)?
+    # Set a single host in config.yaml's default_target, OR replace the
+    # static_configs above with the multi-target relabel pattern:
+    #   static_configs:
+    #     - targets: ["10.0.0.10", "10.0.0.11"]
     #   relabel_configs:
+    #     - source_labels: [__address__]
+    #       target_label: __param_target
     #     - source_labels: [__param_target]
     #       target_label: system
+    #     - source_labels: [__param_target]
+    #       target_label: instance
+    #     - target_label: __address__
+    #       replacement: idrac_exporter:9348

@@ -1,9 +1,14 @@
 # One-command demo stack: exporter (built locally) + Prometheus + Grafana.
+# Runs in scrape-all mode: config.yaml leaves default_target empty, so a bare
+# /metrics returns every configured host and the dashboards show them all.
 #
+#   # one BMC:
 #   IDRAC1_HOST=10.0.0.10 IDRAC1_USERNAME=monitor IDRAC1_PASSWORD='...' docker compose up -d
+#   # two BMCs (host 2 reuses host 1 creds unless IDRAC2_USERNAME/PASSWORD are set):
+#   IDRAC1_HOST=10.0.0.10 IDRAC2_HOST=10.0.0.11 IDRAC1_USERNAME=monitor IDRAC1_PASSWORD='...' docker compose up -d
 #
 # Then: Grafana http://localhost:3000 (admin/admin), Prometheus http://localhost:9090.
-# config.yaml is the source of truth; the IDRAC1_* env vars feed its ${...} references.
+# config.yaml is the source of truth; the IDRAC1_*/IDRAC2_* env vars feed its ${...} references.
 services:
   idrac_exporter:
     build: .
@@ -20,6 +25,10 @@ services:
       - IDRAC1_HOST=${IDRAC1_HOST:-192.168.1.1}
       - IDRAC1_USERNAME=${IDRAC1_USERNAME:-root}
       - IDRAC1_PASSWORD=${IDRAC1_PASSWORD:-}
+      # Second demo host. Its credentials default to the first host's unless set.
+      - IDRAC2_HOST=${IDRAC2_HOST:-192.168.1.2}
+      - IDRAC2_USERNAME=${IDRAC2_USERNAME:-${IDRAC1_USERNAME:-root}}
+      - IDRAC2_PASSWORD=${IDRAC2_PASSWORD:-${IDRAC1_PASSWORD:-}}
     restart: unless-stopped
 
   prometheus:

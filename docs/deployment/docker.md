@@ -6,8 +6,13 @@ Grafana (with the datasource and dashboards auto-provisioned).
 ## Run it
 
 ```sh
-# Point at a BMC and start the stack (build the image locally):
+# One BMC (build the image locally):
 IDRAC1_HOST=10.0.0.10 IDRAC1_USERNAME=monitor IDRAC1_PASSWORD='secret' docker compose up -d
+
+# Two BMCs — the stack runs in scrape-all mode and shows both on the dashboards.
+# Host 2 reuses host 1's credentials unless you set IDRAC2_USERNAME/IDRAC2_PASSWORD:
+IDRAC1_HOST=10.0.0.10 IDRAC2_HOST=10.0.0.11 \
+  IDRAC1_USERNAME=monitor IDRAC1_PASSWORD='secret' docker compose up -d
 ```
 
 Or copy `.env.example` to `.env`, fill it in, and just `docker compose up -d` (compose reads
@@ -28,14 +33,18 @@ IDRAC1_PASSWORD='secret' docker compose -f docker-compose.ghcr.yml up -d
 
 ## How it is wired
 
-- **`config.yaml`** is the source of truth. It sets `default_target: ${IDRAC1_HOST}` and the
-  default credentials from `${IDRAC1_USERNAME}` / `${IDRAC1_PASSWORD}`, expanded from the
-  environment at load time. The compose file passes those variables in (with literal
-  defaults for the single-target quickstart). `.env` is nice; `config.yaml` is the way.
-- Because `default_target` is set, Prometheus scrapes `idrac_exporter:9348/metrics` directly
-  — no `?target=` needed. For a **fleet**, drop `default_target` and use the multi-target
-  relabel pattern from the [README](https://github.com/fjacquet/idrac_exporter#prometheus-configuration),
-  one entry per BMC.
+- **`config.yaml`** is the source of truth. It leaves `default_target` **empty** and lists the
+  BMCs under `hosts:` with env-expanded keys (`${IDRAC1_HOST}`, `${IDRAC2_HOST}`) and their
+  `${IDRAC*_USERNAME}` / `${IDRAC*_PASSWORD}` credentials, expanded at load time. The compose
+  file passes those variables in. `.env` is nice; `config.yaml` is the way.
+- Because `default_target` is empty, a bare `idrac_exporter:9348/metrics` runs **scrape-all**:
+  the exporter collects every host under `hosts:` in one response, each series labeled
+  `instance="<bmc>"` and `system="<bmc>"`, plus a per-host `idrac_up` gauge (`0` for an
+  unreachable BMC — one bad host never fails the scrape). Prometheus scrapes that single URL
+  with `honor_labels: true` so those labels survive.
+- Prefer per-target scraping? Set a single host in `default_target`, or use the multi-target
+  relabel pattern (commented in `prometheus.yml` and the
+  [README](https://github.com/fjacquet/idrac_exporter#prometheus-configuration)), one entry per BMC.
 - BMC Redfish scrapes are slow, so `scrape_interval`/`scrape_timeout` default to 60s/55s —
   tune them for your hardware.
 
@@ -44,13 +53,15 @@ IDRAC1_PASSWORD='secret' docker compose -f docker-compose.ghcr.yml up -d
 All dashboards use a single **`system`** template variable to identify the target host.
 How it is populated depends on the export path:
 
-- **Single-target quickstart (scrape path):** `prometheus.yml` attaches a static `system`
-  label to the scrape target so the dashboards' `system` variable is populated immediately:
+- **Scrape-all quickstart (default):** the exporter injects `instance="<bmc>"` and
+  `system="<bmc>"` on every series of a bare `/metrics`, and `prometheus.yml` scrapes it with
+  `honor_labels: true` so those labels are kept as-is:
 
   ```yaml
-  static_configs:
-    - targets: ["idrac_exporter:9348"]
-      labels: { system: demo-bmc }
+  - job_name: idrac
+    honor_labels: true
+    static_configs:
+      - targets: ["idrac_exporter:9348"]
   ```
 
 - **Multi-target fleet (scrape path):** set `system` per BMC via a relabel rule that copies
