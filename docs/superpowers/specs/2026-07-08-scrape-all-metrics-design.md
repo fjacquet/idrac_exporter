@@ -23,9 +23,9 @@ What is missing is a **pull** door onto that same collection: a bare `/metrics` 
 | D1 | **Overload bare `/metrics`** to return all configured hosts; no new endpoint. | User wants one well-known path. `?target=` stays primary and unchanged. |
 | D2 | **Live fan-out per scrape** (not snapshot-backed). Each bare `/metrics` scrape collects all hosts right then, concurrently. | Freshest data; preserves the on-demand model (ADR 0002); reuses the per-target collector cache + `sync.Cond` coalescing; no new always-on goroutine. Snapshot-backed pull is explicitly deferred (§Out of scope). |
 | D3 | **Routing ladder** with `default_target` as a deprecated single-host override. See §1. | Fully backward-compatible: existing single-default users are unaffected; scrape-all is opt-in by leaving `default_target` empty. |
-| D4 | **Label each host `instance="<bmc>"`**; document `honor_labels: true`. | Standard aggregating-exporter idiom — each BMC becomes its own `instance`, so existing dashboards/alerts that group by `instance` keep working. `instance` is hardcoded (not a config knob) for now. |
+| D4 | **Label each host with BOTH `instance="<bmc>"` and `system="<bmc>"`** (same host value); document `honor_labels: true`. | `instance` is the standard aggregating-exporter idiom (each BMC becomes its own `instance`); `system` is what this repo's bundled Grafana dashboards and the OTLP loop already key on (`docs/configuration.md` per-target relabel sets both). Injecting both makes standard dashboards *and* the bundled ones work from scrape-all. The two names are hardcoded (not a config knob) for now. |
 | D5 | **Extract the loop's collect-all core into a shared package helper**; both the `Loop` and the new handler call it. | No duplicated fan-out/merge logic; the OTLP loop's behavior is unchanged. |
-| D6 | **Parameterize `labelFamilies`' `UNTYPED→GAUGE` coercion** so the pull path skips it. | That coercion exists only for the OTLP bridge. Skipping it keeps the pull exposition byte-compatible with the per-target `?target=` output (`*_info`/`build_info` stay `untyped`). |
+| D6 | **Parameterize `labelFamilies`' `UNTYPED→GAUGE` coercion** so the pull path skips it, and **generalize `labelFamilies`/`upFamily`/`gatherTarget` to take a `names []string` label-key list** (all set to the host value). | The coercion exists only for the OTLP bridge; skipping it keeps the pull exposition byte-compatible with the per-target `?target=` output (`*_info`/`build_info` stay `untyped`). The `[]string` generalization is the minimal way to inject one label (`{system}`, OTLP) or two (`{instance, system}`, pull) without duplicating the labeling code. |
 | D7 | **No new required config, no toggle.** Scrape-all is simply the new bare-`/metrics` default when `default_target` is empty and hosts are configured. | YAGNI. |
 
 ## 1. Request-routing ladder (`cmd/idrac_exporter/handler.go`)
@@ -39,6 +39,23 @@ What is missing is a **pull** door onto that same collection: a bare `/metrics` 
 | `/metrics`, no `default_target`, `hosts:` configured (excluding `default`) | **NEW: scrape-all** — every configured host. |
 | `/metrics`, no target, no `default_target`, no hosts | `400` (as today). |
 
+The decision is extracted into a pure, network-free function so it can be unit-tested in isolation:
+
+```go
+type metricsMode int
+const (
+    modeSingleTarget metricsMode = iota // collect one host (the returned target)
+    modeScrapeAll                       // collect every configured host
+    modeError                           // 400: nothing resolvable
+)
+
+// resolveMetricsMode implements the ladder above. hasHosts is whether any
+// non-"default" host is configured.
+func resolveMetricsMode(target, defaultTarget string, hasHosts bool) (metricsMode, string)
+```
+
+`metricsHandler` calls `resolveMetricsMode`, then dispatches: `modeSingleTarget` → existing `GetCollector(target).Gather()` path; `modeScrapeAll` → `collector.GatherAll()`; `modeError` → `400`. Whether any target host is configured is answered by a new mutex-guarded predicate `config.Config.HasTargetHosts() bool`.
+
 `resetHandler`'s `default_target` fallback is left as-is (out of scope; `/reset` is per-target).
 
 ## 2. Shared collect-all helper (`internal/collector/`)
@@ -48,22 +65,33 @@ Extract the core of `loop.go`'s `collectOnce()` into a package helper, e.g.:
 ```go
 // collectAllHosts collects every configured host (minus the "default"
 // credential fallback) concurrently and returns the merged, sorted Snapshot.
-// label is the identity label name injected per host; coerceUntyped controls
-// whether UNTYPED families are converted to GAUGE (true for OTLP, false for
-// the pull exposition path).
-func collectAllHosts(label string, coerceUntyped bool) *Snapshot
+// names are the identity label keys injected per host (each set to the host
+// value); coerceUntyped controls whether UNTYPED families are converted to
+// GAUGE (true for OTLP, false for the pull exposition path).
+func collectAllHosts(names []string, coerceUntyped bool) *Snapshot
 ```
 
-It performs: `hostTargets()` → `runLimited(concurrency, tasks)` of `gatherTarget(target, label, coerceUntyped)` → `buildSnapshot(perHost)`. `Loop.collectOnce()` is rewritten to call `collectAllHosts(config.Config.OTLP.IdentityLabel, true)` and `Store()` the result — no behavior change. `gatherTarget` gains the `coerceUntyped` parameter, threaded into the labeling step (§3).
+It performs: `hostTargets()` → `runLimited(concurrency, tasks)` of `gatherTarget(target, names, coerceUntyped)` → `buildSnapshot(perHost)`. `Loop.collectOnce()` is rewritten to call `collectAllHosts([]string{config.Config.OTLP.IdentityLabel}, true)` and `Store()` the result — no behavior change (still one `system` label, still coerced). `gatherTarget` gains the `names []string` and `coerceUntyped` parameters, threaded into the labeling step (§3).
+
+The exported pull entry point (called by the handler in `package main`) is:
+
+```go
+// GatherAll collects every configured host and returns the merged Prometheus
+// text exposition. Each series carries instance="<host>" and system="<host>",
+// plus a per-host <prefix>_up gauge. UNTYPED families are left untyped.
+func GatherAll() (string, error)
+```
+
+`GatherAll` calls `collectAllHosts([]string{"instance", "system"}, false)` and renders the snapshot families to text.
 
 ## 3. Labeling & exposition
 
-- **Label injection:** `labelFamilies(families, key, value)` gains a `coerceUntyped bool` parameter. When `false`, it appends the identity label but leaves `UNTYPED` families untyped (skips the `UNTYPED→GAUGE` rewrite). The deep-clone behavior (so the per-target cache stays clean) is retained. OTLP passes `true`; the pull path passes `false`.
-- **Per-host `idrac_up`:** unchanged — `upFamily(key, target, 1|0)` is appended by `gatherTarget`. A host that produced no real metric (down/error) yields **only** `idrac_up=0`.
-- **Merge & sort:** unchanged — `buildSnapshot` concatenates same-named families across hosts and sorts by name. Each host's series are disambiguated by their distinct `instance` value, so no duplicate-series collision.
-- **Rendering:** a new handler helper renders `[]*dto.MetricFamily` → text with the same `expfmt.MetricFamilyToText` loop `Collector.Gather()` uses, reusing the existing gzip path in `metricsHandler`.
+- **Label injection:** `labelFamilies(families, names, value)` gains `names []string` (was a single `key`) and a `coerceUntyped bool` parameter. It appends every `name=value` pair; when `coerceUntyped` is `false` it leaves `UNTYPED` families untyped (skips the `UNTYPED→GAUGE` rewrite). The deep-clone behavior (so the per-target cache stays clean) is retained. OTLP passes `names=[]string{"system"}, coerceUntyped=true`; the pull path passes `names=[]string{"instance","system"}, coerceUntyped=false`.
+- **Per-host `up` gauge:** `upFamily(names, target, 1|0)` similarly gains `names []string` and emits one metric carrying every `name=target` pair. Appended by `gatherTarget`. A host that produced no real metric (down/error) yields **only** the `up` gauge = 0.
+- **Merge & sort:** unchanged — `buildSnapshot` concatenates same-named families across hosts and sorts by name. Each host's series are disambiguated by their distinct `instance`/`system` values, so no duplicate-series collision.
+- **Rendering:** `GatherAll` renders `[]*dto.MetricFamily` → text with the same `expfmt.MetricFamilyToText` loop `Collector.Gather()` uses; `metricsHandler` writes the result through its existing gzip path.
 
-The injected label name for the pull path is the string literal `"instance"`.
+The injected label names for the pull path are the string literals `"instance"` and `"system"`.
 
 ## 4. Config changes (`internal/config/`)
 
@@ -81,7 +109,7 @@ The injected label name for the pull path is the string literal `"instance"`.
 ```yaml
 scrape_configs:
   - job_name: idrac
-    honor_labels: true          # keep the exporter's instance="<bmc>"
+    honor_labels: true          # keep the exporter's instance/system="<bmc>"
     scrape_timeout: 60s
     static_configs:
       - targets: ['idrac-exporter:9348']
@@ -93,12 +121,15 @@ No `?target=`, no `relabel_configs`, no `/discover`. The `?target=` + relabel an
 
 White-box handler tests on the existing `mockRedfish` / `testClient` / `testConfig` harness (`internal/collector/testhelpers_test.go`), driving `metricsHandler`:
 
-- **Two healthy hosts** → bare `/metrics` returns metrics from both, each carrying its own `instance="<host>"` label and `idrac_up{instance=…}=1`.
-- **One host down** → its `idrac_up=0` is present and the scrape still succeeds (200) with the healthy host's metrics intact.
-- **`default_target` set** → bare `/metrics` returns exactly that one host (compat), and the deprecation warning fires.
-- **`?target=<host>`** → unchanged single-host output; no `instance` injected by the exporter (Prometheus relabeling owns it on that path).
-- **No hosts, no `default_target`** → `400`.
-- Exposition for the `?target=` path is byte-identical before/after (guards D6).
+Two layers of tests:
+
+**Collector level (`package collector`, using the mock harness):** exercise `GatherAll`/`collectAllHosts` via the pre-populated `collectors`-map pattern from `TestLoopCollectOnceDegradesPerHost` (bypasses real Redfish discovery):
+
+- **Two healthy hosts** → `GatherAll()` text contains metrics from both, each series carrying `instance="<host>"` AND `system="<host>"`, plus `idrac_up{instance="<host>",system="<host>"}=1` for each.
+- **One host down** → its `idrac_up=…0` is present and `GatherAll` still succeeds with the healthy host's metrics intact.
+- Updated `labelFamilies`/`upFamily` unit tests (in `snapshot_test.go`) for the new `names []string` signatures, including a two-name case and the `coerceUntyped=false` (no `UNTYPED→GAUGE`) case.
+
+**Handler routing (`package main`):** the routing ladder is extracted into a pure function `resolveMetricsMode(target, defaultTarget string, hasHosts bool) (metricsMode, string)` (see §1) and unit-tested for all four ladder rows without any network — `?target=` → single; empty+default → single(default); empty+no-default+hosts → scrape-all; empty+no-default+no-hosts → error.
 
 `make ci` (`fmt-check`, `vet`, `golangci-lint`, `go test -race`, `govulncheck`) is the gate.
 
@@ -114,5 +145,5 @@ White-box handler tests on the existing `mockRedfish` / `testClient` / `testConf
 - A separate `/metrics/all` endpoint.
 - Per-request context/timeout threading into collection.
 - Curated host subsets (`default_target` as a list).
-- Making the injected `instance` label name configurable.
+- Making the injected label names (`instance`, `system`) configurable.
 - Removing `default_target` (a later release, after the deprecation window).
