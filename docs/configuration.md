@@ -98,3 +98,26 @@ scrape_configs:
         regex: (https?.{3})([^\/]+)(.+)
         replacement: $2
 ```
+
+### Scrape all hosts from one static target
+
+If you leave `default_target` empty, a bare `/metrics` (no `target` parameter)
+collects **every** configured host in one response, each series labeled
+`instance="<bmc>"` and `system="<bmc>"`. Point Prometheus at the exporter with a
+single static target and `honor_labels: true` so those labels survive scraping:
+
+```yaml
+scrape_configs:
+  - job_name: idrac
+    honor_labels: true          # keep the exporter's instance/system="<bmc>"
+    scrape_timeout: 60s
+    static_configs:
+      - targets: ['exporter:9348']
+```
+
+No `?target=`, no `relabel_configs`, no `/discover`. A down or unreachable BMC
+does not fail the scrape — it contributes only
+`idrac_up{instance="<bmc>",system="<bmc>"} 0`. Because one scrape collects every
+host (bounded by `concurrency`), give Prometheus a generous `scrape_timeout` for
+large fleets. The `?target=` and `/discover` patterns above remain fully
+supported for operators who prefer per-target scraping.
