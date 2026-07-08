@@ -1,19 +1,27 @@
 # Source-of-truth config for the docker-compose demo stack.
-# Secrets come from the environment (compose sets IDRAC1_*; .env is gitignored).
-# ${VAR} references are expanded at load time. config.yaml is the way; .env is nice.
+# Secrets come from the environment (compose sets IDRAC1_*/IDRAC2_*; .env is gitignored).
+# ${VAR} references are expanded at load time — including in the host keys below.
 address: 0.0.0.0
 port: 9348
 timeout: 60 # BMC Redfish calls can be slow
 
-# The BMC scraped when /metrics is called without a ?target= parameter.
-# For a fleet, omit this and use the Prometheus relabel pattern (see README) so a
-# single exporter serves many targets via /metrics?target=<bmc>.
-default_target: ${IDRAC1_HOST}
+# default_target is left EMPTY on purpose. With it empty, a bare /metrics (no
+# ?target=) runs "scrape-all": the exporter collects every host under `hosts:`
+# in one response, each series labeled instance="<bmc>" and system="<bmc>", plus
+# a per-host idrac_up gauge. Set a single host here only for the legacy
+# single-target behavior (it is deprecated but still honored).
+default_target: ""
 
+# Demo hosts. Keys are env-expanded, so ${IDRAC1_HOST}/${IDRAC2_HOST} become the
+# real BMC addresses at load time. If you only have one BMC, delete the second
+# block (otherwise it just reports idrac_up=0 — a harmless "down" series).
 hosts:
-  default:
+  ${IDRAC1_HOST}:
     username: ${IDRAC1_USERNAME}
     password: ${IDRAC1_PASSWORD}
+  ${IDRAC2_HOST}:
+    username: ${IDRAC2_USERNAME}
+    password: ${IDRAC2_PASSWORD}
 
 metrics:
   all: true
