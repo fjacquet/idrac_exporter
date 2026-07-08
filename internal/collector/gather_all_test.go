@@ -39,7 +39,7 @@ func TestGatherAllLabelsAndUpPerHost(t *testing.T) {
 		t.Fatalf("GatherAll: %v", err)
 	}
 
-	// expfmt sorts labels by name: instance before system.
+	// Label order follows the []string{"instance","system"} construction order in upFamily/labelFamilies (expfmt preserves input order, it does not sort).
 	if !strings.Contains(out, `idrac_up{instance="bmc1",system="bmc1"} 1`) {
 		t.Errorf("missing up=1 for healthy bmc1:\n%s", out)
 	}

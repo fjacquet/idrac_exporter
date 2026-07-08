@@ -100,7 +100,12 @@ func resolveMetricsMode(target, defaultTarget string, hasHosts bool) (metricsMod
 
 func metricsHandler(rsp http.ResponseWriter, req *http.Request) {
 	target := req.URL.Query().Get("target")
-	mode, target := resolveMetricsMode(target, config.Config.DefaultTarget, config.Config.HasTargetHosts())
+	defaultTarget := config.Config.DefaultTarget
+	hasHosts := false
+	if target == "" && defaultTarget == "" {
+		hasHosts = config.Config.HasTargetHosts()
+	}
+	mode, target := resolveMetricsMode(target, defaultTarget, hasHosts)
 
 	switch mode {
 	case modeError:
