@@ -34,9 +34,10 @@ Alternative per-machine status (`grafana/status-alternative.json`):
   many machines.  `system` is the canonical host-identity label across both export paths:
   - **OTLP/snapshot path:** the exporter injects it automatically (configurable via
     `otlp.identity_label`, default `system`).
-  - **On-demand scrape path:** attach a `system` label to each Prometheus target via a static
-    label or relabel rule — see the [Docker Compose quickstart](deployment/docker.md) for
-    details.
+  - **On-demand scrape-all path:** the exporter injects `system` (and `instance`) per host on
+    a bare `/metrics`; Prometheus keeps them with `honor_labels: true`. For per-target
+    (`?target=`) scraping, set `system` via a relabel rule instead — see the
+    [Docker Compose quickstart](deployment/docker.md).
 - Health metrics map `0 = OK`, `1 = Warning`, `2 = Critical`.
 - Any per-second gauge is aggregated with `sum`/`avg` in PromQL — never `rate()` (the
   exporter already exposes instantaneous values).

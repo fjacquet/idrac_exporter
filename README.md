@@ -61,13 +61,18 @@ Set the listen address to `0.0.0.0` when running in a container.
 
 ### Docker Compose quickstart
 
-A one-command demo stack — exporter, Prometheus (with alert rules) and Grafana (datasource + dashboards auto-provisioned):
+A one-command demo stack — exporter, Prometheus (with alert rules) and Grafana (datasource + dashboards auto-provisioned). It runs in **scrape-all** mode: `config.yaml` leaves `default_target` empty, so a bare `/metrics` returns every configured host and Prometheus scrapes it with `honor_labels: true`. Each series is labeled `system="<bmc>"`, so the dashboards' `System` selector lists all hosts.
 
 ```sh
+# One BMC:
 IDRAC1_HOST=10.0.0.10 IDRAC1_USERNAME=monitor IDRAC1_PASSWORD='secret' docker compose up -d
+
+# Two BMCs (host 2 reuses host 1's credentials unless you set IDRAC2_USERNAME/IDRAC2_PASSWORD):
+IDRAC1_HOST=10.0.0.10 IDRAC2_HOST=10.0.0.11 \
+  IDRAC1_USERNAME=monitor IDRAC1_PASSWORD='secret' docker compose up -d
 ```
 
-Grafana is then on <http://localhost:3000> (`admin`/`admin`), Prometheus on <http://localhost:9090>. A reachable BMC is required. Full walkthrough: [Docker Compose](https://fjacquet.github.io/idrac_exporter/deployment/docker/).
+Grafana is then on <http://localhost:3000> (`admin`/`admin`), Prometheus on <http://localhost:9090>. At least one reachable BMC is required. Full walkthrough: [Docker Compose](https://fjacquet.github.io/idrac_exporter/deployment/docker/).
 
 ### Helm
 
