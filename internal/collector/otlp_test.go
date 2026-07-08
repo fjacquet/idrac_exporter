@@ -29,8 +29,8 @@ func TestSnapshotDualExport(t *testing.T) {
 	}
 
 	store := NewSnapshotStore()
-	labeled := labelFamilies(fams, "system", "bmc1")
-	host := append(labeled, upFamily("system", "bmc1", 1))
+	labeled := labelFamilies(fams, []string{"system"}, "bmc1", true)
+	host := append(labeled, upFamily([]string{"system"}, "bmc1", 1))
 	store.Store(buildSnapshot([][]*dto.MetricFamily{host}))
 
 	// (a) Prometheus gatherer path.

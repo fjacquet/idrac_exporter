@@ -68,7 +68,7 @@ func (l *Loop) collectOnce() {
 	for _, target := range targets {
 		target := target
 		tasks = append(tasks, func() {
-			fams := gatherTarget(target, key)
+			fams := gatherTarget(target, []string{key}, true)
 			accMu.Lock()
 			perHost = append(perHost, fams)
 			accMu.Unlock()
@@ -79,28 +79,26 @@ func (l *Loop) collectOnce() {
 	l.store.Store(buildSnapshot(perHost))
 }
 
-// gatherTarget collects one host and returns its families with the identity
-// label applied plus the <prefix>_up gauge. An unreachable host, a gather
-// error, or a cycle that produced no real metric yields only up=0.
-func gatherTarget(target, key string) []*dto.MetricFamily {
+// gatherTarget collects one host and returns its families with every name in
+// `names` applied as a label plus the <prefix>_up gauge. An unreachable host,
+// a gather error, or a cycle that produced no real metric yields only up=0.
+func gatherTarget(target string, names []string, coerceUntyped bool) []*dto.MetricFamily {
 	collector, err := GetCollector(target, "")
 	if err != nil {
 		log.Error("snapshot: get collector for %s: %v", target, err)
-		return []*dto.MetricFamily{upFamily(key, target, 0)}
+		return []*dto.MetricFamily{upFamily(names, target, 0)}
 	}
 	families, err := collector.GatherFamilies()
 	if err != nil {
 		log.Error("snapshot: gather %s: %v", target, err)
-		return []*dto.MetricFamily{upFamily(key, target, 0)}
+		return []*dto.MetricFamily{upFamily(names, target, 0)}
 	}
 	// A nil error is not a freshness guarantee: coalesced waiters always return
 	// the last cached families with err==nil even if the leader just failed (see
-	// GatherFamilies). The hasRealMetric check below is the real gate — a host
-	// that has never produced metrics returns an empty/meta-only slice and is
-	// reported down, regardless of which goroutine produced it.
+	// GatherFamilies). The hasRealMetric check below is the real gate.
 	if !hasRealMetric(families) {
-		return []*dto.MetricFamily{upFamily(key, target, 0)}
+		return []*dto.MetricFamily{upFamily(names, target, 0)}
 	}
-	labeled := labelFamilies(families, key, target)
-	return append(labeled, upFamily(key, target, 1))
+	labeled := labelFamilies(families, names, target, coerceUntyped)
+	return append(labeled, upFamily(names, target, 1))
 }
