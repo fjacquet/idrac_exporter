@@ -47,10 +47,12 @@ tls:
   cert_file: "" # CONFIG_TLS_CERT_FILE=
   key_file: "" # CONFIG_TLS_KEY_FILE=
 
-# When setting this variable, the specified target will be used when the metrics
-# endpoint is called without the target parameter. Unset by default.
+# DEPRECATED: 'default_target' is retained for backward compatibility and will be
+# removed in a future release. When set, a bare /metrics (no ?target=) returns
+# ONLY this single host. Leave it empty (or omit it) to have a bare /metrics
+# collect ALL configured hosts at once, each series labeled instance/system.
 # Environment variable: CONFIG_DEFAULT_TARGET=192.168.1.1
-default_target: "192.168.1.1"
+default_target: ""
 
 # The hosts section is used to define login credentials for the different targets.
 # Hosts can be referenced either via their IP address or their hostname, as long

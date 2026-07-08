@@ -52,7 +52,7 @@ need to see the exact shape the BMC returned.
 
 | Endpoint    | Parameters | Description                                   |
 | ----------- | ---------- | --------------------------------------------- |
-| `/metrics`  | `target`   | Metrics for the specified target              |
+| `/metrics`  | `target`   | Metrics for the specified target. With no `target` and no `default_target`, collects **all** configured hosts (each labeled `instance`/`system`); needs `honor_labels: true`. |
 | `/reset`    | `target`   | Reset internal state for the specified target |
 | `/reload`   |            | Reload the configuration file                 |
 | `/discover` |            | Prometheus HTTP Service Discovery             |

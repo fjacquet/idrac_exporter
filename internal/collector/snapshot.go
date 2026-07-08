@@ -48,17 +48,18 @@ func (s *SnapshotStore) Gather() ([]*dto.MetricFamily, error) {
 	return snap.families, nil
 }
 
-// labelFamilies returns a deep copy of families ready for the OTLP snapshot: an
-// identity label (key=value) is appended to every metric, and UNTYPED families
-// (the exporter's *_info and build_info metrics) are converted to GAUGE so the
-// OpenTelemetry Prometheus bridge maps them instead of dropping them. The source
-// families are never mutated, so the collector's cached gather output stays clean
-// for the on-demand path.
-func labelFamilies(families []*dto.MetricFamily, key, value string) []*dto.MetricFamily {
+// labelFamilies returns a deep copy of families ready for the OTLP snapshot:
+// every name in `names` is appended as a label (set to value) on every metric,
+// and, when coerceUntyped is set, UNTYPED families (the exporter's *_info and
+// build_info metrics) are converted to GAUGE so the OpenTelemetry Prometheus
+// bridge maps them instead of dropping them. The source families are never
+// mutated, so the collector's cached gather output stays clean for the
+// on-demand path.
+func labelFamilies(families []*dto.MetricFamily, names []string, value string, coerceUntyped bool) []*dto.MetricFamily {
 	out := make([]*dto.MetricFamily, 0, len(families))
 	for _, mf := range families {
 		clone := proto.Clone(mf).(*dto.MetricFamily)
-		if clone.GetType() == dto.MetricType_UNTYPED {
+		if coerceUntyped && clone.GetType() == dto.MetricType_UNTYPED {
 			clone.Type = dto.MetricType_GAUGE.Enum()
 			for _, m := range clone.Metric {
 				if m.Untyped != nil {
@@ -68,27 +69,33 @@ func labelFamilies(families []*dto.MetricFamily, key, value string) []*dto.Metri
 			}
 		}
 		for _, m := range clone.Metric {
-			m.Label = append(m.Label, &dto.LabelPair{
-				Name:  proto.String(key),
-				Value: proto.String(value),
-			})
+			for _, name := range names {
+				m.Label = append(m.Label, &dto.LabelPair{
+					Name:  proto.String(name),
+					Value: proto.String(value),
+				})
+			}
 		}
 		out = append(out, clone)
 	}
 	return out
 }
 
-// upFamily builds the <prefix>_up metric family for one target, carrying the
-// identity label.
-func upFamily(key, target string, value float64) *dto.MetricFamily {
+// upFamily builds the <prefix>_up metric family for one target, carrying
+// every name in `names` as a label.
+func upFamily(names []string, target string, value float64) *dto.MetricFamily {
 	name := prometheus.BuildFQName(config.Config.MetricsPrefix, "", "up")
 	help := "Whether the last collection of the target succeeded (1) or failed (0)"
+	labels := make([]*dto.LabelPair, 0, len(names))
+	for _, n := range names {
+		labels = append(labels, &dto.LabelPair{Name: proto.String(n), Value: proto.String(target)})
+	}
 	return &dto.MetricFamily{
 		Name: proto.String(name),
 		Help: proto.String(help),
 		Type: dto.MetricType_GAUGE.Enum(),
 		Metric: []*dto.Metric{{
-			Label: []*dto.LabelPair{{Name: proto.String(key), Value: proto.String(target)}},
+			Label: labels,
 			Gauge: &dto.Gauge{Value: proto.Float64(value)},
 		}},
 	}

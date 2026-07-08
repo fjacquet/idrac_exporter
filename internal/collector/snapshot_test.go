@@ -31,7 +31,7 @@ func TestSnapshotStoreEmptyGather(t *testing.T) {
 
 func TestLabelFamiliesDoesNotMutateSource(t *testing.T) {
 	src := []*dto.MetricFamily{sampleFamily("idrac_system_health")}
-	out := labelFamilies(src, "system", "bmc1")
+	out := labelFamilies(src, []string{"system"}, "bmc1", true)
 
 	if got := len(src[0].Metric[0].Label); got != 0 {
 		t.Fatalf("source mutated: %d labels, want 0", got)
@@ -64,7 +64,7 @@ func TestLabelFamiliesConvertsUntypedToGauge(t *testing.T) {
 			Untyped: &dto.Untyped{Value: proto.Float64(1)},
 		}},
 	}}
-	out := labelFamilies(src, "system", "bmc1")
+	out := labelFamilies(src, []string{"system"}, "bmc1", true)
 	if out[0].GetType() != dto.MetricType_GAUGE {
 		t.Fatalf("type = %v, want GAUGE", out[0].GetType())
 	}
@@ -86,7 +86,7 @@ func TestLabelFamiliesConvertsUntypedToGauge(t *testing.T) {
 
 func TestUpFamilyCarriesIdentityLabel(t *testing.T) {
 	testConfig(t, func(c *config.CollectConfig) { c.System = true })
-	mf := upFamily("system", "bmc1", 0)
+	mf := upFamily([]string{"system"}, "bmc1", 0)
 	if mf.GetName() != "idrac_up" {
 		t.Fatalf("up name = %q, want idrac_up", mf.GetName())
 	}
@@ -96,5 +96,38 @@ func TestUpFamilyCarriesIdentityLabel(t *testing.T) {
 	}
 	if m.Label[0].GetName() != "system" || m.Label[0].GetValue() != "bmc1" {
 		t.Fatalf("up label = %+v, want system=bmc1", m.Label)
+	}
+}
+
+func TestLabelFamiliesInjectsMultipleNames(t *testing.T) {
+	src := []*dto.MetricFamily{sampleFamily("idrac_system_health")}
+	out := labelFamilies(src, []string{"instance", "system"}, "bmc1", false)
+	lbls := out[0].Metric[0].Label
+	if len(lbls) != 2 {
+		t.Fatalf("got %d labels, want 2: %+v", len(lbls), lbls)
+	}
+	got := map[string]string{}
+	for _, l := range lbls {
+		got[l.GetName()] = l.GetValue()
+	}
+	if got["instance"] != "bmc1" || got["system"] != "bmc1" {
+		t.Fatalf("labels = %+v, want instance=bmc1 system=bmc1", got)
+	}
+}
+
+func TestLabelFamiliesNoCoerceKeepsUntyped(t *testing.T) {
+	src := []*dto.MetricFamily{{
+		Name: proto.String("idrac_system_machine_info"),
+		Type: dto.MetricType_UNTYPED.Enum(),
+		Metric: []*dto.Metric{{
+			Untyped: &dto.Untyped{Value: proto.Float64(1)},
+		}},
+	}}
+	out := labelFamilies(src, []string{"instance"}, "bmc1", false)
+	if out[0].GetType() != dto.MetricType_UNTYPED {
+		t.Fatalf("type = %v, want UNTYPED (no coercion)", out[0].GetType())
+	}
+	if out[0].Metric[0].Untyped == nil {
+		t.Fatal("Untyped cleared, want preserved")
 	}
 }

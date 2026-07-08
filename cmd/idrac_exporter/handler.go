@@ -75,18 +75,58 @@ func discoverHandler(rsp http.ResponseWriter, req *http.Request) {
 	_, _ = io.WriteString(w, config.GetDiscover())
 }
 
+type metricsMode int
+
+const (
+	modeSingleTarget metricsMode = iota // collect one host (the returned target)
+	modeScrapeAll                       // collect every configured host
+	modeError                           // 400: nothing resolvable
+)
+
+// resolveMetricsMode implements the /metrics routing ladder. hasHosts reports
+// whether any non-"default" host is configured.
+func resolveMetricsMode(target, defaultTarget string, hasHosts bool) (metricsMode, string) {
+	if target != "" {
+		return modeSingleTarget, target
+	}
+	if defaultTarget != "" {
+		return modeSingleTarget, defaultTarget
+	}
+	if hasHosts {
+		return modeScrapeAll, ""
+	}
+	return modeError, ""
+}
+
 func metricsHandler(rsp http.ResponseWriter, req *http.Request) {
 	target := req.URL.Query().Get("target")
-	if target == "" {
-		target = config.Config.DefaultTarget
-		if target == "" {
-			log.Error("Received request from %s without 'target' parameter", req.Host)
-			http.Error(rsp, "Query parameter 'target' is mandatory", http.StatusBadRequest)
+	defaultTarget := config.Config.DefaultTarget
+	hasHosts := false
+	if target == "" && defaultTarget == "" {
+		hasHosts = config.Config.HasTargetHosts()
+	}
+	mode, target := resolveMetricsMode(target, defaultTarget, hasHosts)
+
+	switch mode {
+	case modeError:
+		log.Error("Received request from %s without 'target' parameter and no hosts configured", req.Host)
+		http.Error(rsp, "Query parameter 'target' is mandatory", http.StatusBadRequest)
+		return
+	case modeScrapeAll:
+		log.Debug("Handling scrape-all metrics request from %s", req.Host)
+		metrics, err := collector.GatherAll()
+		if err != nil {
+			errorMsg := fmt.Sprintf("Error collecting metrics for all hosts: %v", err)
+			log.Error("%v", errorMsg)
+			http.Error(rsp, errorMsg, http.StatusInternalServerError)
 			return
 		}
+		writeMetrics(rsp, req, metrics)
+		return
 	}
-	auth := req.URL.Query().Get("auth")
 
+	// modeSingleTarget
+	auth := req.URL.Query().Get("auth")
 	log.Debug("Handling metrics request from %s for host %s", req.Host, target)
 
 	c, err := collector.GetCollector(target, auth)
@@ -108,7 +148,12 @@ func metricsHandler(rsp http.ResponseWriter, req *http.Request) {
 	}
 
 	log.Debug("Metrics for host %s collected", target)
+	writeMetrics(rsp, req, metrics)
+}
 
+// writeMetrics writes the exposition text to the response, gzipping when the
+// client accepts it. Shared by the single-target and scrape-all paths.
+func writeMetrics(rsp http.ResponseWriter, req *http.Request, metrics string) {
 	header := rsp.Header()
 	header.Set(contentTypeHeader, "text/plain")
 

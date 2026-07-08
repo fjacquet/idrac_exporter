@@ -130,6 +130,19 @@ func (c *RootConfig) FromFile(filename string) error {
 	return nil
 }
 
+// HasTargetHosts reports whether any host other than the "default" credential
+// fallback is configured. Read under Config.Mutex.
+func (c *RootConfig) HasTargetHosts() bool {
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
+	for k := range c.Hosts {
+		if k != "default" {
+			return true
+		}
+	}
+	return false
+}
+
 func (c *RootConfig) Validate() error {
 	// root
 	if c.Address == "" {
@@ -146,6 +159,10 @@ func (c *RootConfig) Validate() error {
 
 	if c.MetricsPrefix == "" {
 		c.MetricsPrefix = "idrac"
+	}
+
+	if c.DefaultTarget != "" {
+		log.Warn("config: 'default_target' is deprecated and will be removed in a future release; leave it empty to have a bare /metrics scrape collect all configured hosts")
 	}
 
 	// hosts
