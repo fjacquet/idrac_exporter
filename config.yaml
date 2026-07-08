@@ -13,8 +13,10 @@ timeout: 60 # BMC Redfish calls can be slow
 default_target: ""
 
 # Demo hosts. Keys are env-expanded, so ${IDRAC1_HOST}/${IDRAC2_HOST} become the
-# real BMC addresses at load time. If you only have one BMC, delete the second
-# block (otherwise it just reports idrac_up=0 — a harmless "down" series).
+# real BMC addresses at load time. Via the Compose files an unset IDRAC2_HOST
+# falls back to 192.168.1.2 and just reports idrac_up=0 (a harmless "down"
+# series). If you copy this file to run the binary directly with only one BMC,
+# delete the second block — an empty ${IDRAC2_HOST} would leave a bare ":" key.
 hosts:
   ${IDRAC1_HOST}:
     username: ${IDRAC1_USERNAME}
