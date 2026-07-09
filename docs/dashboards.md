@@ -15,13 +15,22 @@ The overview and detail dashboards were contributed by
 
 ## Previews
 
-Per-machine detail (`grafana/idrac.json`):
+Per-machine detail (`grafana/idrac.json`) — inventory, memory, disks, and NIC link state:
 
-![Per-machine detail dashboard](https://raw.githubusercontent.com/fjacquet/idrac_exporter/main/grafana/bmc1.png)
+![Per-machine detail dashboard](https://raw.githubusercontent.com/fjacquet/idrac_exporter/main/grafana/bmc-detail.png)
 
-Fleet overview (`grafana/idrac_overview.json`):
+The `System` template variable picks which machine the detail panels describe:
 
-![Fleet overview dashboard](https://raw.githubusercontent.com/fjacquet/idrac_exporter/main/grafana/bmc2.png)
+![Per-machine detail dashboard system picker](https://raw.githubusercontent.com/fjacquet/idrac_exporter/main/grafana/bmc-detail-system-picker.png)
+
+Fleet overview (`grafana/idrac_overview.json`) — health rollups, scrape-error counts, and
+target availability across both export paths:
+
+![Fleet overview dashboard](https://raw.githubusercontent.com/fjacquet/idrac_exporter/main/grafana/bmc-overview-fleet-health.png)
+
+The same dashboard's sensor row breaks temperature out by inlet, outlet, and CPU:
+
+![Fleet overview dashboard sensors](https://raw.githubusercontent.com/fjacquet/idrac_exporter/main/grafana/bmc-overview-sensors.png)
 
 Alternative per-machine status (`grafana/status-alternative.json`):
 
