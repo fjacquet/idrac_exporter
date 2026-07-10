@@ -41,3 +41,17 @@ This fork is being brought into the exporter-standards family. Highlights since 
 - This is a hard fork and no longer tracks upstream `mrlhansen/idrac_exporter`.
 - The public metric contract is preserved: the `idrac_` prefix (configurable), port `9348`,
   and the on-demand `/metrics?target=` model.
+
+## [1.1.2] - 2026-07-10
+
+### Security
+
+- Bumped the Go directive to 1.26.5 to patch GO-2026-5856 (crypto/tls), which was failing
+  govulncheck / `make ci` family-wide.
+
+### Fixed
+
+- Restored multi-arch GHCR image publishing via a `dockers_v2` block in `.goreleaser.yaml`;
+  tagged releases now publish `ghcr.io/fjacquet/idrac_exporter` again instead of only binaries.
+- Added `Dockerfile.goreleaser`, which `COPY`s the per-platform `${TARGETPLATFORM}` binary laid
+  out by buildx instead of compiling from source.

@@ -64,6 +64,32 @@ sboms:
     documents:
       - "{{ .ProjectName }}_{{ .Version }}.sbom.cdx.json"
 
+# Multi-arch container image via buildx. sbom:true attaches SBOM + provenance
+# attestations natively (restores the former GHCR image publishing).
+dockers_v2:
+  - id: idrac_exporter
+    ids:
+      - idrac_exporter
+    dockerfile: Dockerfile.goreleaser
+    images:
+      - "ghcr.io/fjacquet/idrac_exporter"
+    tags:
+      - "{{ .Version }}"
+      - "{{ .Major }}.{{ .Minor }}"
+      - "{{ if not .Prerelease }}latest{{ end }}"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    extra_files:
+      - default-config.yml
+      - entrypoint.sh
+    labels:
+      org.opencontainers.image.title: "{{ .ProjectName }}"
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+      org.opencontainers.image.source: "https://github.com/fjacquet/idrac_exporter"
+    sbom: true
+
 homebrew_casks:
   - name: idrac_exporter
     repository:
