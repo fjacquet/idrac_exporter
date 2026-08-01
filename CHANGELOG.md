@@ -9,6 +9,8 @@ for tagged versions are also generated automatically on the
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-08-01
+
 This fork is being brought into the exporter-standards family. Highlights since the fork from
 `mrlhansen/idrac_exporter`:
 
@@ -59,6 +61,8 @@ This fork is being brought into the exporter-standards family. Highlights since 
 
 - Bumped the Go directive to 1.26.5 to patch GO-2026-5856 (crypto/tls), which was failing
   govulncheck / `make ci` family-wide.
+- Bumped `google.golang.org/grpc` to v1.83.0, closing **GO-2026-6061** (xDS RBAC and HTTP/2
+  vulnerabilities). The vulnerability was reachable from the OTLP push path.
 
 ### Fixed
 
