@@ -3,8 +3,8 @@
 ## Status
 
 Accepted — implemented 2026-08-01. Adopts the family probe and container-image
-standards this repo was skipped by; see the family design note
-`2026-08-01-family-standard-catch-up-design.md`.
+standards this repo was skipped by; see the family catch-up plan
+[`2026-08-01-family-catch-up.md`](../superpowers/plans/2026-08-01-family-catch-up.md).
 
 ## Context
 
