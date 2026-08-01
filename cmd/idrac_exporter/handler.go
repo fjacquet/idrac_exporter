@@ -46,6 +46,20 @@ func rootHandler(rsp http.ResponseWriter, req *http.Request) {
 	}{version.Version, version.Revision})
 }
 
+// staticOKHandler always answers 200. It reads no configuration, no collector
+// and no snapshot, so a probe wired here can never be the reason a healthy
+// process is restarted or pulled from rotation. /livez and /readyz both use
+// it; /health is the endpoint that describes what the exporter is configured
+// to scrape.
+//
+// Never point a probe at /metrics: this exporter collects a BMC per request,
+// so a probe tick would drive a full Redfish scrape and can block behind a
+// slow or unreachable BMC.
+func staticOKHandler(rsp http.ResponseWriter, _ *http.Request) {
+	rsp.WriteHeader(http.StatusOK)
+	_, _ = rsp.Write([]byte("ok"))
+}
+
 func healthHandler(rsp http.ResponseWriter, req *http.Request) {
 	// just return a simple 200 for now
 }

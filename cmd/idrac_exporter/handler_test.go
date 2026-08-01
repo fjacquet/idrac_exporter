@@ -1,6 +1,27 @@
 package main
 
-import "testing"
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
+
+// TestStaticOKHandler asserts the probe handler is unconditionally 200 with a
+// body, reading no configuration or collection state. /livez and /readyz both
+// use it, so this is the whole contract.
+func TestStaticOKHandler(t *testing.T) {
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/livez", nil)
+
+	staticOKHandler(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+	if got := rec.Body.String(); got != "ok" {
+		t.Fatalf("body = %q, want %q", got, "ok")
+	}
+}
 
 func TestResolveMetricsMode(t *testing.T) {
 	tests := []struct {
