@@ -72,3 +72,12 @@ type RootConfig struct {
 	Hosts         map[string]*AuthConfig `yaml:"hosts"`
 	Auths         map[string]*AuthConfig `yaml:"auths"`
 }
+
+// HostHealth describes one configured BMC target for the /health body. It is
+// configuration only — this exporter collects per request, so there is no
+// per-host collection state to report.
+type HostHealth struct {
+	Host    string
+	Scheme  string
+	Default bool
+}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/fjacquet/idrac_exporter/internal/log"
@@ -141,6 +142,34 @@ func (c *RootConfig) HasTargetHosts() bool {
 		}
 	}
 	return false
+}
+
+// TargetHosts returns every configured BMC host, sorted by host, for the
+// /health body. The "default" key is a credential fallback rather than a
+// target and is excluded, matching HasTargetHosts. Default marks the
+// deprecated default_target. Read under Config.Mutex: a SIGHUP reload can add
+// hosts while a /health request is in flight.
+func (c *RootConfig) TargetHosts() []HostHealth {
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
+
+	out := make([]HostHealth, 0, len(c.Hosts))
+	for name, h := range c.Hosts {
+		if name == "default" {
+			continue
+		}
+		scheme := ""
+		if h != nil {
+			scheme = h.Scheme
+		}
+		out = append(out, HostHealth{
+			Host:    name,
+			Scheme:  scheme,
+			Default: name == c.DefaultTarget,
+		})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Host < out[j].Host })
+	return out
 }
 
 func (c *RootConfig) Validate() error {
