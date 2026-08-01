@@ -23,6 +23,14 @@ services:
       - IDRAC2_HOST=${IDRAC2_HOST:-192.168.1.2}
       - IDRAC2_USERNAME=${IDRAC2_USERNAME:-${IDRAC1_USERNAME:-root}}
       - IDRAC2_PASSWORD=${IDRAC2_PASSWORD:-${IDRAC1_PASSWORD:-}}
+    # 127.0.0.1, not localhost: busybox wget tries ::1 first and the exporter
+    # binds IPv4 only. Timeout matches the Dockerfile HEALTHCHECK (5s) exactly.
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:9348/livez"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     restart: unless-stopped
 
   prometheus:
