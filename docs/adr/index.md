@@ -15,3 +15,4 @@ Consequences sections.
 | [0007](0007-config-hot-reload.md) | Config hot reload (SIGHUP + file watch) | Accepted | Phase 2 |
 | [0008](0008-absent-not-zero-parsing.md) | Defensive payload parsing: absent, never zero | Accepted | Phase 3 |
 | [0009](0009-otlp-via-prometheus-bridge.md) | OTLP via the Prometheus bridge over a MetricFamily snapshot (Phase 4) | Accepted | Phase 4 |
+| [0010](0010-always-200-probes-and-container-healthcheck.md) | Always-200 `/livez` / `/readyz` and a container `HEALTHCHECK` | Accepted | 2026-08-01 |
