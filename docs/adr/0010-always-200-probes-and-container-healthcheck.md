@@ -27,10 +27,11 @@ Three fixed paths, all unconditionally 200:
   reason a working process is restarted or pulled from rotation.
 - `/health` keeps status 200 unconditionally and gains an informational JSON
   body: `status`, `version`, `revision`, and one `hosts[]` entry per configured
-  BMC (`host`, `scheme`, and `default_target` on the deprecated
-  `default_target`). The `default` map key is a credential fallback, not a
-  target, and is excluded. There is no `last_scrape` or per-host `ok` field —
-  per-host reachability is answered by `idrac_up` on a scrape.
+  BMC (`host`, `scheme`, and `default_target`, a bool flagging whether that
+  host matches the deprecated root-level `default_target` config setting).
+  The `default` map key is a credential fallback, not a target, and is
+  excluded. There is no `last_scrape` or per-host `ok` field — per-host
+  reachability is answered by `idrac_up` on a scrape.
 - Probes never point at `/metrics`: a probe tick would drive a real Redfish
   scrape and can block behind an unreachable BMC.
 
