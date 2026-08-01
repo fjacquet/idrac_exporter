@@ -2,6 +2,7 @@ package main
 
 import (
 	"compress/gzip"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -46,8 +47,64 @@ func rootHandler(rsp http.ResponseWriter, req *http.Request) {
 	}{version.Version, version.Revision})
 }
 
-func healthHandler(rsp http.ResponseWriter, req *http.Request) {
-	// just return a simple 200 for now
+// staticOKHandler always answers 200. It reads no configuration, no collector
+// and no snapshot, so a probe wired here can never be the reason a healthy
+// process is restarted or pulled from rotation. /livez and /readyz both use
+// it; /health is the endpoint that describes what the exporter is configured
+// to scrape.
+//
+// Never point a probe at /metrics: this exporter collects a BMC per request,
+// so a probe tick would drive a full Redfish scrape and can block behind a
+// slow or unreachable BMC.
+func staticOKHandler(rsp http.ResponseWriter, _ *http.Request) {
+	rsp.WriteHeader(http.StatusOK)
+	_, _ = rsp.Write([]byte("ok"))
+}
+
+// hostHealth is one configured BMC target in the /health body.
+type hostHealth struct {
+	Host    string `json:"host"`
+	Scheme  string `json:"scheme"`
+	Default bool   `json:"default_target,omitempty"`
+}
+
+// healthResponse is the informational /health body.
+//
+// It carries no per-host success state on purpose: this exporter collects a
+// BMC per request (/metrics?target=), so there is no background cycle whose
+// result a "last scrape" field could report. Whether a given BMC is reachable
+// is answered by scraping it — the idrac_up gauge — not by this endpoint.
+type healthResponse struct {
+	Status   string       `json:"status"`
+	Version  string       `json:"version"`
+	Revision string       `json:"revision"`
+	Hosts    []hostHealth `json:"hosts"`
+}
+
+// healthHandler always answers 200 with an informational body naming every
+// configured BMC host. The status code never depends on configuration or on
+// BMC reachability: /livez and /readyz are the probe endpoints, and a /health
+// that flips to 503 only ever removes a working exporter from rotation.
+func healthHandler(rsp http.ResponseWriter, _ *http.Request) {
+	out := healthResponse{
+		Status:   "ok",
+		Version:  version.Version,
+		Revision: version.Revision,
+		Hosts:    []hostHealth{},
+	}
+	if config.Config != nil {
+		for _, h := range config.Config.TargetHosts() {
+			out.Hosts = append(out.Hosts, hostHealth{
+				Host:    h.Host,
+				Scheme:  h.Scheme,
+				Default: h.Default,
+			})
+		}
+	}
+
+	rsp.Header().Set(contentTypeHeader, "application/json")
+	rsp.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(rsp).Encode(out)
 }
 
 func reloadHandler(rsp http.ResponseWriter, req *http.Request) {

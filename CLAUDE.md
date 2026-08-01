@@ -26,7 +26,7 @@ Key flags: `--config <path>` (default `/etc/prometheus/idrac.yml`), `--config-wa
 
 ## Request flow (the core mental model)
 
-1. `cmd/idrac_exporter/main.go` registers HTTP routes and starts the server. Endpoints: `/metrics` (needs `target`), `/discover` (Prometheus HTTP SD), `/reset`, `/reload`, `/health`, `/`.
+1. `cmd/idrac_exporter/main.go` registers HTTP routes and starts the server. Endpoints: `/metrics` (needs `target`), `/discover` (Prometheus HTTP SD), `/reset`, `/reload`, `/livez`, `/readyz`, `/health`, `/`. Routes go on `http.DefaultServeMux` via top-level `http.HandleFunc` — this repo's idiom (ADR-0010); do not refactor to an explicit mux. `/livez` and `/readyz` share `staticOKHandler` and read no state; `/health` is always 200 with a JSON body naming the configured BMC hosts.
 2. `metricsHandler` (`handler.go`) → `collector.GetCollector(target, auth)`.
 3. `GetCollector` (`internal/collector/collector.go`) keeps a **per-target `*Collector` cache** (`collectors` map). On first request for a target it builds a `Client`, which **discovers all Redfish endpoint paths and detects the vendor** (`client.findAllEndpoints`). This discovery is the expensive, vendor-sensitive step.
 4. `Collector.Gather()` serializes metrics to Prometheus text. Concurrent scrapes of the **same** target coalesce via a `sync.Cond`: only one collection runs, the others block and receive the same cached output.

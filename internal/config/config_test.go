@@ -62,3 +62,36 @@ func TestConcurrencyDefaultsToUnlimited(t *testing.T) {
 		t.Fatalf("Concurrency = %d, want 0 (unlimited default)", c.Concurrency)
 	}
 }
+
+func TestTargetHosts(t *testing.T) {
+	c := NewConfig()
+	c.DefaultTarget = "10.0.0.11"
+	c.Hosts["10.0.0.11"] = &AuthConfig{Username: "u", Password: "p", Scheme: "https"}
+	c.Hosts["10.0.0.10"] = &AuthConfig{Username: "u", Password: "p", Scheme: "http"}
+	// "default" is a credential fallback, not a BMC — it must not be reported.
+	c.Hosts["default"] = &AuthConfig{Username: "u", Password: "p", Scheme: "https"}
+
+	got := c.TargetHosts()
+
+	want := []HostHealth{
+		{Host: "10.0.0.10", Scheme: "http", Default: false},
+		{Host: "10.0.0.11", Scheme: "https", Default: true},
+	}
+	if len(got) != len(want) {
+		t.Fatalf("TargetHosts() = %+v, want %+v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("TargetHosts()[%d] = %+v, want %+v", i, got[i], want[i])
+		}
+	}
+}
+
+func TestTargetHostsEmptyWhenOnlyDefaultCredential(t *testing.T) {
+	c := NewConfig()
+	c.Hosts["default"] = &AuthConfig{Username: "u", Password: "p", Scheme: "https"}
+
+	if got := c.TargetHosts(); len(got) != 0 {
+		t.Fatalf("TargetHosts() = %+v, want empty", got)
+	}
+}

@@ -25,6 +25,10 @@ This fork is being brought into the exporter-standards family. Highlights since 
 - Supply-chain hardening: semgrep and govulncheck in CI, a CycloneDX SBOM, SHA-pinned GitHub
   Actions, and a non-root container image.
 - MkDocs documentation site and Architecture Decision Records.
+- `/livez` and `/readyz` probe endpoints, always HTTP 200 and reading no configuration or
+  collector state, so a probe can never restart a working exporter because a BMC went away.
+- A `HEALTHCHECK` against `/livez` in both Dockerfiles and a matching `healthcheck:` in
+  `docker-compose.yml` and `docker-compose.ghcr.yml`.
 
 ### Changed
 
@@ -35,6 +39,13 @@ This fork is being brought into the exporter-standards family. Highlights since 
 - Hardened Redfish JSON parsing so unparseable fields yield absent samples instead of zero.
 - Renamed the module path to `github.com/fjacquet/idrac_exporter`; container images are
   published on GHCR.
+- `/health` now returns a JSON body — `status`, `version`, `revision`, and one entry per
+  configured BMC host — instead of an empty 200. The status code is still 200
+  unconditionally.
+- The Helm chart's liveness and readiness probes moved from `/health` to `/livez` and
+  `/readyz`. `/health` is still served and still 200.
+- The container base image is `alpine:latest` instead of `alpine:3.23`, matching the rest of
+  the exporter family.
 
 ### Notes
 

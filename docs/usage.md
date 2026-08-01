@@ -56,9 +56,21 @@ need to see the exact shape the BMC returned.
 | `/reset`    | `target`   | Reset internal state for the specified target |
 | `/reload`   |            | Reload the configuration file                 |
 | `/discover` |            | Prometheus HTTP Service Discovery             |
-| `/health`   |            | Liveness probe (returns HTTP 200)             |
+| `/livez`    |            | Liveness probe — always HTTP 200, reads no state |
+| `/readyz`   |            | Readiness probe — always HTTP 200, reads no state |
+| `/health`   |            | Always HTTP 200 with a JSON body listing the configured BMC hosts |
 | `/`         |            | Landing page                                  |
 
 `/reset?target=` drops a target's cached collector, forcing fresh Redfish discovery on the
 next scrape. `/reload` re-reads the configuration file and resets only the hosts whose
 credentials changed.
+
+Point Kubernetes and Docker probes at `/livez` and `/readyz`. Both are wired to a
+handler that reads no configuration and no collector state, so a probe can never
+restart a working exporter because a BMC went away. Never probe `/metrics`: it
+collects a BMC per request and can block behind an unreachable one. `/health` is
+informational — it is always 200 and its body names each configured host:
+
+```json
+{"status":"ok","version":"1.1.2","revision":"b8f6212","hosts":[{"host":"10.0.0.10","scheme":"https"}]}
+```

@@ -86,6 +86,8 @@ func run(_ *cobra.Command, _ []string) error {
 	http.HandleFunc("/discover", discoverHandler)
 	http.HandleFunc("/metrics", metricsHandler)
 	http.HandleFunc("/health", healthHandler)
+	http.HandleFunc("/livez", staticOKHandler)
+	http.HandleFunc("/readyz", staticOKHandler)
 	http.HandleFunc("/reload", reloadHandler)
 	http.HandleFunc("/reset", resetHandler)
 	http.HandleFunc("/", rootHandler)
