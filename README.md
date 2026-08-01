@@ -137,7 +137,9 @@ idrac_exporter --config config.yml --once --debug   # full JSON dump
 | `/reset`    | `target`   | Reset internal state for the specified target |
 | `/reload`   |            | Reload the configuration file                 |
 | `/discover` |            | Prometheus HTTP Service Discovery             |
-| `/health`   |            | Returns HTTP 200                              |
+| `/livez`    |            | Liveness probe — always HTTP 200, reads no state |
+| `/readyz`   |            | Readiness probe — always HTTP 200, reads no state |
+| `/health`   |            | Always HTTP 200 with a JSON body listing the configured BMC hosts |
 | `/`         |            | Landing page                                  |
 
 ## Prometheus configuration

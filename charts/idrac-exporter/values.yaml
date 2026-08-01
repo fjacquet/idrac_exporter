@@ -47,13 +47,16 @@ resources: {}
   #   cpu: 100m
   #   memory: 128Mi
 
+# /livez and /readyz read no configuration and no collector state, so a probe can
+# never restart a working exporter because a BMC went away (ADR-0010). /health is
+# informational and also always 200, but it renders a JSON body per request.
 livenessProbe:
   httpGet:
-    path: /health
+    path: /livez
     port: http
 readinessProbe:
   httpGet:
-    path: /health
+    path: /readyz
     port: http
 
 volumes: []
