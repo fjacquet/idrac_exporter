@@ -68,3 +68,13 @@ per-repo one.
 The Helm chart's liveness and readiness probes move from `/health` to `/livez`
 and `/readyz`. `/health` remains served and remains 200, so any external check
 pointed at it keeps working.
+
+The `HEALTHCHECK` itself assumes a plaintext listener (`wget --spider
+http://127.0.0.1:9348/livez`). Deployments that enable `tls.enabled` and
+terminate TLS in the container must override it — either point `wget` at
+`https://127.0.0.1:9348/livez` with `--no-check-certificate`, or disable the
+check — or the probe fails against a perfectly healthy exporter. This is a
+family-wide property of the standard, not an idrac-specific regression: TLS
+is absent from both `config.yaml` and `default-config.yml` here, so plaintext
+remains the right default, but the gap is real wherever a sibling repo (or a
+future idrac deployment) turns TLS on.
