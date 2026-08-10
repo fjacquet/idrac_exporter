@@ -3,13 +3,13 @@
 # of `apk add ca-certificates` (which fetches over TLS from the Alpine CDN and
 # fails behind a corporate MITM proxy — the bare alpine image has no CA bundle
 # yet to validate the proxy certificate).
-FROM golang:1.26 AS builder
+FROM docker.io/library/golang:1.26 AS builder
 
 WORKDIR /app/src
 COPY . .
 RUN make cli
 
-FROM alpine:latest AS container
+FROM docker.io/library/alpine:latest AS container
 
 WORKDIR /app
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
