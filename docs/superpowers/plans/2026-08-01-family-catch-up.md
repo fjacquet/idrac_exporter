@@ -147,7 +147,7 @@ Note on testing strategy: the tests call `staticOKHandler` directly with
 registrations. That the routes are actually wired is verified end-to-end in
 Task 4, where the container's own `HEALTHCHECK` hits `/livez` over the network.
 
-- [ ] **Step 1: Write the failing test.** Append to
+- [x] **Step 1: Write the failing test.** Append to
       `/Users/fjacquet/Projects/idrac_exporter/cmd/idrac_exporter/handler_test.go`:
 
   ```go
@@ -180,7 +180,7 @@ Task 4, where the container's own `HEALTHCHECK` hits `/livez` over the network.
   )
   ```
 
-- [ ] **Step 2: Run it and watch it fail to compile.**
+- [x] **Step 2: Run it and watch it fail to compile.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && go test ./cmd/idrac_exporter/ -run TestStaticOKHandler
@@ -188,7 +188,7 @@ Task 4, where the container's own `HEALTHCHECK` hits `/livez` over the network.
 
   Expect `undefined: staticOKHandler`.
 
-- [ ] **Step 3: Implement `staticOKHandler`.** In
+- [x] **Step 3: Implement `staticOKHandler`.** In
       `/Users/fjacquet/Projects/idrac_exporter/cmd/idrac_exporter/handler.go`,
       insert immediately **after** `rootHandler` (which ends at line 47) and
       **before** `healthHandler`:
@@ -209,13 +209,13 @@ Task 4, where the container's own `HEALTHCHECK` hits `/livez` over the network.
   }
   ```
 
-- [ ] **Step 4: Run it and watch it pass.**
+- [x] **Step 4: Run it and watch it pass.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && go test ./cmd/idrac_exporter/ -run TestStaticOKHandler -v
   ```
 
-- [ ] **Step 5: Register the routes.** In
+- [x] **Step 5: Register the routes.** In
       `/Users/fjacquet/Projects/idrac_exporter/cmd/idrac_exporter/main.go`,
       replace the block at lines 86-91:
 
@@ -244,7 +244,7 @@ Task 4, where the container's own `HEALTHCHECK` hits `/livez` over the network.
   Nothing else in `main.go` changes. Leave `srv := &http.Server{...}` (lines
   98-101) exactly as it is — no `Handler:` field, no `http.NewServeMux()`.
 
-- [ ] **Step 6: Smoke-test the live routes.** In one terminal:
+- [x] **Step 6: Smoke-test the live routes.** In one terminal:
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && go run ./cmd/idrac_exporter --config default-config.yml
@@ -259,7 +259,7 @@ Task 4, where the container's own `HEALTHCHECK` hits `/livez` over the network.
 
   Both must print `200`. Stop the server with Ctrl-C.
 
-- [ ] **Step 7: Gate and commit.**
+- [x] **Step 7: Gate and commit.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && make fmt-check vet test
@@ -287,7 +287,7 @@ mutated by `ReloadConfig` (`cmd/idrac_exporter/config.go` lines 33-49) under
 race caught by `go test -race`. `HasTargetHosts` (config.go lines 135-144) is the
 existing precedent for taking that lock inside the package.
 
-- [ ] **Step 1: Write the failing test.** Append to
+- [x] **Step 1: Write the failing test.** Append to
       `/Users/fjacquet/Projects/idrac_exporter/internal/config/config_test.go`:
 
   ```go
@@ -328,7 +328,7 @@ existing precedent for taking that lock inside the package.
   Check the existing import block of that file first; these tests need only
   `testing`, which is already imported.
 
-- [ ] **Step 2: Run it and watch it fail.**
+- [x] **Step 2: Run it and watch it fail.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && go test ./internal/config/ -run TestTargetHosts
@@ -336,7 +336,7 @@ existing precedent for taking that lock inside the package.
 
   Expect `c.TargetHosts undefined` / `undefined: HostHealth`.
 
-- [ ] **Step 3: Add the `HostHealth` type.** Append to
+- [x] **Step 3: Add the `HostHealth` type.** Append to
       `/Users/fjacquet/Projects/idrac_exporter/internal/config/model.go`:
 
   ```go
@@ -350,7 +350,7 @@ existing precedent for taking that lock inside the package.
   }
   ```
 
-- [ ] **Step 4: Implement `TargetHosts`.** Append to
+- [x] **Step 4: Implement `TargetHosts`.** Append to
       `/Users/fjacquet/Projects/idrac_exporter/internal/config/config.go`,
       immediately after `HasTargetHosts` (which ends at line 144):
 
@@ -416,13 +416,13 @@ existing precedent for taking that lock inside the package.
   )
   ```
 
-- [ ] **Step 5: Run it and watch it pass.**
+- [x] **Step 5: Run it and watch it pass.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && go test -race ./internal/config/ -run TestTargetHosts -v
   ```
 
-- [ ] **Step 6: Gate and commit.**
+- [x] **Step 6: Gate and commit.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && make fmt-check vet test
@@ -463,7 +463,7 @@ existing precedent for taking that lock inside the package.
   field: this exporter has no background per-host collection whose result those
   could report.
 
-- [ ] **Step 1: Write the failing tests.** Append to
+- [x] **Step 1: Write the failing tests.** Append to
       `/Users/fjacquet/Projects/idrac_exporter/cmd/idrac_exporter/handler_test.go`:
 
   ```go
@@ -554,7 +554,7 @@ existing precedent for taking that lock inside the package.
   )
   ```
 
-- [ ] **Step 2: Run them and watch them fail.**
+- [x] **Step 2: Run them and watch them fail.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && go test ./cmd/idrac_exporter/ -run 'TestHealthHandler'
@@ -562,7 +562,7 @@ existing precedent for taking that lock inside the package.
 
   Expect `undefined: healthResponse`.
 
-- [ ] **Step 3: Implement the handler.** In
+- [x] **Step 3: Implement the handler.** In
       `/Users/fjacquet/Projects/idrac_exporter/cmd/idrac_exporter/handler.go`,
       replace the existing no-op (lines 49-51):
 
@@ -664,13 +664,13 @@ existing precedent for taking that lock inside the package.
   `config` and `version` are already imported and used elsewhere in the file; no
   other import changes are needed.
 
-- [ ] **Step 4: Run them and watch them pass.**
+- [x] **Step 4: Run them and watch them pass.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && go test -race ./cmd/idrac_exporter/ -run 'TestHealthHandler|TestStaticOKHandler' -v
   ```
 
-- [ ] **Step 5: Eyeball the real body.** In one terminal:
+- [x] **Step 5: Eyeball the real body.** In one terminal:
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && go run ./cmd/idrac_exporter --config config.yaml
@@ -685,7 +685,7 @@ existing precedent for taking that lock inside the package.
   Confirm a JSON object with `status`, `version`, `revision`, `hosts`, and that
   no password or username appears anywhere in the output. Stop the server.
 
-- [ ] **Step 6: Gate and commit.**
+- [x] **Step 6: Gate and commit.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && make fmt-check vet test lint
@@ -703,7 +703,7 @@ existing precedent for taking that lock inside the package.
 - Consumes: `/livez` on port 9348 from Task 1.
 - Produces: a local image whose `docker inspect` health status reaches `healthy`.
 
-- [ ] **Step 1: Switch the base image.** In
+- [x] **Step 1: Switch the base image.** In
       `/Users/fjacquet/Projects/idrac_exporter/Dockerfile`, replace line 12:
 
   ```dockerfile
@@ -720,7 +720,7 @@ existing precedent for taking that lock inside the package.
   unpinned `alpine:latest`, and uniformity was chosen over per-repo
   reproducibility. Do not re-pin it here; that is a fifteen-repo decision.
 
-- [ ] **Step 2: Add the HEALTHCHECK.** In the same file, insert between the
+- [x] **Step 2: Add the HEALTHCHECK.** In the same file, insert between the
       `USER idrac` line (line 21) and the `ENTRYPOINT` line (line 23), so the
       tail of the file reads:
 
@@ -741,13 +741,13 @@ existing precedent for taking that lock inside the package.
   the binary. Leave it untouched — the HEALTHCHECK runs as its own exec and is
   unaffected.
 
-- [ ] **Step 3: Build the image.**
+- [x] **Step 3: Build the image.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && docker build -t idrac_exporter:hc-test .
   ```
 
-- [ ] **Step 4: Run it and assert it goes healthy.** The image ships
+- [x] **Step 4: Run it and assert it goes healthy.** The image ships
       `default-config.yml` at `/etc/prometheus/idrac.yml`, which configures only
       the `default` credential — enough for the process to start and serve.
 
@@ -766,7 +766,7 @@ existing precedent for taking that lock inside the package.
   with `docker inspect --format='{{json .State.Health}}' idrac_hc_test` before
   changing anything — the usual cause is a `localhost` slip or a wrong port.
 
-- [ ] **Step 5: Confirm the endpoints from outside the container.**
+- [x] **Step 5: Confirm the endpoints from outside the container.**
 
   ```sh
   curl -sS -o /dev/null -w 'livez=%{http_code}\n' http://127.0.0.1:9348/livez
@@ -780,7 +780,7 @@ existing precedent for taking that lock inside the package.
   docker rm -f idrac_hc_test
   ```
 
-- [ ] **Step 6: Run hadolint and record, do not fix.**
+- [x] **Step 6: Run hadolint and record, do not fix.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && docker run --rm -i hadolint/hadolint < Dockerfile
@@ -789,7 +789,7 @@ existing precedent for taking that lock inside the package.
   `DL3025` (shell-form CMD) and `DL3007` (unpinned `latest`) are expected here.
   Do not add suppressions and do not change the file to silence them.
 
-- [ ] **Step 7: Commit.**
+- [x] **Step 7: Commit.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && git add -A && git commit -m "build(docker): unpin alpine and add a /livez HEALTHCHECK to the dev image"
@@ -808,7 +808,7 @@ existing precedent for taking that lock inside the package.
   layout).
 - Produces: the published GHCR image, health-checked.
 
-- [ ] **Step 1: Switch the base image.** In
+- [x] **Step 1: Switch the base image.** In
       `/Users/fjacquet/Projects/idrac_exporter/Dockerfile.goreleaser`, replace
       line 4:
 
@@ -822,7 +822,7 @@ existing precedent for taking that lock inside the package.
   FROM alpine:latest AS container
   ```
 
-- [ ] **Step 2: Add the HEALTHCHECK.** In the same file, insert between
+- [x] **Step 2: Add the HEALTHCHECK.** In the same file, insert between
       `USER idrac` (line 20) and `ENTRYPOINT` (line 22), so the tail reads:
 
   ```dockerfile
@@ -843,7 +843,7 @@ existing precedent for taking that lock inside the package.
   `default-config.yml` and `entrypoint.sh` under `extra_files`, and the
   HEALTHCHECK needs no additional context file.
 
-- [ ] **Step 3: Stage a local build context.** This Dockerfile `COPY`s a
+- [x] **Step 3: Stage a local build context.** This Dockerfile `COPY`s a
       pre-built binary, so build it first. On Apple Silicon, target arm64 —
       building an amd64 binary and running it locally gives `exec format error`
       and the healthcheck never turns green.
@@ -857,7 +857,7 @@ existing precedent for taking that lock inside the package.
   (On an amd64 host, use `GOARCH=amd64` and `linux/amd64` consistently in this
   step and the next.)
 
-- [ ] **Step 4: Build and run, then assert healthy.**
+- [x] **Step 4: Build and run, then assert healthy.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && \
@@ -872,7 +872,7 @@ existing precedent for taking that lock inside the package.
 
   Must print `healthy`.
 
-- [ ] **Step 5: Clean up the staged context.** The `linux/` directory is a build
+- [x] **Step 5: Clean up the staged context.** The `linux/` directory is a build
       artifact and must not be committed.
 
   ```sh
@@ -883,7 +883,7 @@ existing precedent for taking that lock inside the package.
 
   `git status` must show only `Dockerfile.goreleaser` as modified.
 
-- [ ] **Step 6: Run hadolint and record, do not fix.**
+- [x] **Step 6: Run hadolint and record, do not fix.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && docker run --rm -i hadolint/hadolint < Dockerfile.goreleaser
@@ -891,7 +891,7 @@ existing precedent for taking that lock inside the package.
 
   `DL3025`, `DL3007` and `DL3066` are expected standing findings.
 
-- [ ] **Step 7: Commit.**
+- [x] **Step 7: Commit.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && git add -A && git commit -m "build(docker): unpin alpine and add a /livez HEALTHCHECK to the release image"
@@ -910,7 +910,7 @@ existing precedent for taking that lock inside the package.
 - Produces: `docker compose ps` reporting `(healthy)` for the exporter service in
   both stacks.
 
-- [ ] **Step 1: Add the healthcheck to `docker-compose.yml`.** In the
+- [x] **Step 1: Add the healthcheck to `docker-compose.yml`.** In the
       `idrac_exporter` service, insert a `healthcheck:` block immediately before
       `restart: unless-stopped` (line 32), so the service tail reads:
 
@@ -934,7 +934,7 @@ existing precedent for taking that lock inside the package.
       restart: unless-stopped
   ```
 
-- [ ] **Step 2: Add the same block to `docker-compose.ghcr.yml`.** In its
+- [x] **Step 2: Add the same block to `docker-compose.ghcr.yml`.** In its
       `idrac_exporter` service, insert immediately before
       `restart: unless-stopped` (line 26), so the service tail reads:
 
@@ -961,7 +961,7 @@ existing precedent for taking that lock inside the package.
   Do not add a `healthcheck:` to the `prometheus` or `grafana` services — they are
   out of scope.
 
-- [ ] **Step 3: Validate both files parse.**
+- [x] **Step 3: Validate both files parse.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && docker compose -f docker-compose.yml config -q && docker compose -f docker-compose.ghcr.yml config -q && echo COMPOSE_OK
@@ -970,7 +970,7 @@ existing precedent for taking that lock inside the package.
   Remember: `config -q` passing proves nothing about `localhost` vs `127.0.0.1`.
   Step 4 is the actual verification.
 
-- [ ] **Step 4: Bring the local stack up and assert healthy.**
+- [x] **Step 4: Bring the local stack up and assert healthy.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && docker compose up -d idrac_exporter
@@ -987,7 +987,7 @@ existing precedent for taking that lock inside the package.
   published; its block is byte-identical to the verified one, and the same
   HEALTHCHECK is baked into `Dockerfile.goreleaser` and verified in Task 5.
 
-- [ ] **Step 5: Commit.**
+- [x] **Step 5: Commit.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && git add -A && git commit -m "build(compose): health-check the exporter service against /livez in both stacks"
@@ -1006,7 +1006,7 @@ existing precedent for taking that lock inside the package.
 - Consumes: the decisions implemented in Tasks 1-6.
 - Produces: a documented decision record reachable from the docs nav.
 
-- [ ] **Step 1: Confirm the ADR number.**
+- [x] **Step 1: Confirm the ADR number.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && ls docs/adr/
@@ -1016,7 +1016,7 @@ existing precedent for taking that lock inside the package.
   next free number. If the listing shows otherwise, use the actual next free
   number and adjust every filename and link below accordingly.
 
-- [ ] **Step 2: Write the ADR.** Create
+- [x] **Step 2: Write the ADR.** Create
       `/Users/fjacquet/Projects/idrac_exporter/docs/adr/0010-always-200-probes-and-container-healthcheck.md`:
 
   ```markdown
@@ -1091,7 +1091,7 @@ existing precedent for taking that lock inside the package.
   pointed at it keeps working.
   ```
 
-- [ ] **Step 3: Add the index row.** In
+- [x] **Step 3: Add the index row.** In
       `/Users/fjacquet/Projects/idrac_exporter/docs/adr/index.md`, append after
       the 0009 row (line 17):
 
@@ -1099,7 +1099,7 @@ existing precedent for taking that lock inside the package.
   | [0010](0010-always-200-probes-and-container-healthcheck.md) | Always-200 `/livez` / `/readyz` and a container `HEALTHCHECK` | Accepted | 2026-08-01 |
   ```
 
-- [ ] **Step 4: Add the nav entry.** In
+- [x] **Step 4: Add the nav entry.** In
       `/Users/fjacquet/Projects/idrac_exporter/mkdocs.yml`, append under
       `Architecture Decisions:`, after the `0009` line:
 
@@ -1107,7 +1107,7 @@ existing precedent for taking that lock inside the package.
         - 0010 Always-200 probes & HEALTHCHECK: adr/0010-always-200-probes-and-container-healthcheck.md
   ```
 
-- [ ] **Step 5: Build the docs strictly.**
+- [x] **Step 5: Build the docs strictly.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && uvx --with mkdocs-material --with pymdown-extensions mkdocs build --strict --site-dir site
@@ -1115,7 +1115,7 @@ existing precedent for taking that lock inside the package.
 
   Must exit 0. A missing nav entry or a broken relative link fails here.
 
-- [ ] **Step 6: Commit.**
+- [x] **Step 6: Commit.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && git add -A && git commit -m "docs(adr): record the always-200 probes and container HEALTHCHECK as ADR-0010"
@@ -1138,7 +1138,7 @@ existing precedent for taking that lock inside the package.
 Every repo in the family Alpine effort needed a post-review fix wave for exactly
 this. Do the sweep now, not after review.
 
-- [ ] **Step 1: Find every stale claim.**
+- [x] **Step 1: Find every stale claim.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && \
@@ -1150,7 +1150,7 @@ this. Do the sweep now, not after review.
   and `docs/superpowers/` (historical plans and specs stay as written) must be
   reconciled with the steps below.
 
-- [ ] **Step 2: Update the README endpoints table.** In
+- [x] **Step 2: Update the README endpoints table.** In
       `/Users/fjacquet/Projects/idrac_exporter/README.md`, replace the `/health`
       row (line 140) so the table reads:
 
@@ -1167,7 +1167,7 @@ this. Do the sweep now, not after review.
   | `/`         |            | Landing page                                  |
   ```
 
-- [ ] **Step 3: Update the docs endpoints table.** In
+- [x] **Step 3: Update the docs endpoints table.** In
       `/Users/fjacquet/Projects/idrac_exporter/docs/usage.md`, replace the
       `/health` row (line 59) so the table reads:
 
@@ -1200,7 +1200,7 @@ this. Do the sweep now, not after review.
   ```
   ~~~
 
-- [ ] **Step 4: Update `CLAUDE.md`.** In
+- [x] **Step 4: Update `CLAUDE.md`.** In
       `/Users/fjacquet/Projects/idrac_exporter/CLAUDE.md`, replace line 29:
 
   ```markdown
@@ -1213,7 +1213,7 @@ this. Do the sweep now, not after review.
   1. `cmd/idrac_exporter/main.go` registers HTTP routes and starts the server. Endpoints: `/metrics` (needs `target`), `/discover` (Prometheus HTTP SD), `/reset`, `/reload`, `/livez`, `/readyz`, `/health`, `/`. Routes go on `http.DefaultServeMux` via top-level `http.HandleFunc` — this repo's idiom (ADR-0010); do not refactor to an explicit mux. `/livez` and `/readyz` share `staticOKHandler` and read no state; `/health` is always 200 with a JSON body naming the configured BMC hosts.
   ```
 
-- [ ] **Step 5: Repoint the chart probes.** In
+- [x] **Step 5: Repoint the chart probes.** In
       `/Users/fjacquet/Projects/idrac_exporter/charts/idrac-exporter/values.yaml`,
       replace the probe block (lines 50-57):
 
@@ -1247,7 +1247,7 @@ this. Do the sweep now, not after review.
   `charts/idrac-exporter/templates/deployment.yaml` renders these values verbatim
   (`{{- toYaml .Values.livenessProbe | nindent 12 }}`) and needs no change.
 
-- [ ] **Step 6: Verify the chart still renders.**
+- [x] **Step 6: Verify the chart still renders.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && helm template charts/idrac-exporter | grep -A4 -E "livenessProbe|readinessProbe"
@@ -1257,12 +1257,12 @@ this. Do the sweep now, not after review.
   `helm lint charts/idrac-exporter` or skip with a note — the chart CI workflow
   (`.github/workflows/helm-charts.yml`) covers it.
 
-- [ ] **Step 7: Re-run the grep from Step 1** and confirm the only remaining
+- [x] **Step 7: Re-run the grep from Step 1** and confirm the only remaining
       `/health` and `alpine:3.23` hits are inside `docs/adr/` and
       `docs/superpowers/` (historical records) or are the intentional `/health`
       rows added above.
 
-- [ ] **Step 8: Rebuild the docs and commit.**
+- [x] **Step 8: Rebuild the docs and commit.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && uvx --with mkdocs-material --with pymdown-extensions mkdocs build --strict --site-dir site
@@ -1280,7 +1280,7 @@ this. Do the sweep now, not after review.
 - Consumes: everything shipped in Tasks 1-8.
 - Produces: `## [Unreleased]` entries in Keep a Changelog format.
 
-- [ ] **Step 1: Add the entries.** `## [Unreleased]` already exists at line 10,
+- [x] **Step 1: Add the entries.** `## [Unreleased]` already exists at line 10,
       with an intro paragraph and `### Added` / `### Changed` / `### Notes`
       subsections. Append these bullets to the **existing** `### Added` list
       (which currently ends with the "MkDocs documentation site and Architecture
@@ -1306,7 +1306,7 @@ this. Do the sweep now, not after review.
     the exporter family.
   ```
 
-- [ ] **Step 2: Sanity-check the rendering.**
+- [x] **Step 2: Sanity-check the rendering.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && sed -n '10,50p' CHANGELOG.md
@@ -1315,7 +1315,7 @@ this. Do the sweep now, not after review.
   Confirm the new bullets sit under the right `###` headings and that no duplicate
   heading was introduced.
 
-- [ ] **Step 3: Commit.**
+- [x] **Step 3: Commit.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && git add -A && git commit -m "docs(changelog): record the probes, HEALTHCHECK and /health body"
@@ -1332,7 +1332,7 @@ this. Do the sweep now, not after review.
 - Produces: evidence that `make ci`, the docs build, both images and both compose
   files are green.
 
-- [ ] **Step 1: Run the CI gate.**
+- [x] **Step 1: Run the CI gate.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && make fmt-check vet ci
@@ -1341,7 +1341,7 @@ this. Do the sweep now, not after review.
   `ci` is `lint test build vuln`. All must pass. Note `make test` runs with
   `-race`; a `/health` test racing a config reload would surface here.
 
-- [ ] **Step 2: Rebuild and re-verify the dev image end to end.**
+- [x] **Step 2: Rebuild and re-verify the dev image end to end.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && docker build -t idrac_exporter:hc-final . && \
@@ -1352,19 +1352,19 @@ this. Do the sweep now, not after review.
 
   Must print `healthy`. Then `docker rm -f idrac_hc_final`.
 
-- [ ] **Step 3: Re-validate both compose files.**
+- [x] **Step 3: Re-validate both compose files.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && docker compose -f docker-compose.yml config -q && docker compose -f docker-compose.ghcr.yml config -q && echo COMPOSE_OK
   ```
 
-- [ ] **Step 4: Rebuild the docs.**
+- [x] **Step 4: Rebuild the docs.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && uvx --with mkdocs-material --with pymdown-extensions mkdocs build --strict --site-dir site
   ```
 
-- [ ] **Step 5: Confirm the tree is clean and nothing stray was committed.**
+- [x] **Step 5: Confirm the tree is clean and nothing stray was committed.**
 
   ```sh
   cd /Users/fjacquet/Projects/idrac_exporter && git status --porcelain && git log --oneline -9
@@ -1380,42 +1380,42 @@ this. Do the sweep now, not after review.
 Work through this list before declaring the plan's implementation complete. Each
 item is a claim that must be backed by output you actually saw.
 
-- [ ] `/livez` and `/readyz` are registered in `main.go` with `http.HandleFunc`
+- [x] `/livez` and `/readyz` are registered in `main.go` with `http.HandleFunc`
       on `http.DefaultServeMux`, and `srv` still has **no** `Handler:` field.
       There is no `http.NewServeMux()` anywhere in `main.go`.
-- [ ] `staticOKHandler` references no package-level state — grep it: it touches
+- [x] `staticOKHandler` references no package-level state — grep it: it touches
       neither `config.` nor `collector.` nor `version.`.
-- [ ] `/health` returns 200 in every case, including with zero configured hosts
+- [x] `/health` returns 200 in every case, including with zero configured hosts
       and with `config.Config == nil`.
-- [ ] `/health`'s `hosts` field serializes as `[]`, never `null`, when empty —
+- [x] `/health`'s `hosts` field serializes as `[]`, never `null`, when empty —
       `TestHealthHandlerNoHosts` asserts this on the raw body, not the decoded
       struct.
-- [ ] `/health` never leaks a username, password, or password-file path. Re-read
+- [x] `/health` never leaks a username, password, or password-file path. Re-read
       the `hostHealth` struct and confirm only `host`, `scheme` and
       `default_target` are present.
-- [ ] The `default` map key does not appear in the `hosts` list — it is a
+- [x] The `default` map key does not appear in the `hosts` list — it is a
       credential fallback, not a BMC.
-- [ ] `TargetHosts()` takes `Config.Mutex`, and `go test -race ./...` is green.
-- [ ] Both Dockerfiles say `alpine:latest`; neither says `alpine:3.23`.
-- [ ] All four healthcheck definitions (2 Dockerfiles, 2 compose files) use
+- [x] `TargetHosts()` takes `Config.Mutex`, and `go test -race ./...` is green.
+- [x] Both Dockerfiles say `alpine:latest`; neither says `alpine:3.23`.
+- [x] All four healthcheck definitions (2 Dockerfiles, 2 compose files) use
       `127.0.0.1`, port `9348`, path `/livez`. Grep for `localhost` in all four
       and confirm zero hits.
-- [ ] All four use `timeout 5s` — the Dockerfiles as `--timeout=5s`, the compose
+- [x] All four use `timeout 5s` — the Dockerfiles as `--timeout=5s`, the compose
       files as `timeout: 5s`. No 10s anywhere in a timeout position.
-- [ ] `docker inspect --format='{{.State.Health.Status}}'` printed `healthy` for
+- [x] `docker inspect --format='{{.State.Health.Status}}'` printed `healthy` for
       an image built from `./Dockerfile` **and** for one built from
       `Dockerfile.goreleaser`. You saw both words.
-- [ ] No `# hadolint ignore=`, no `//nolint`, no `# nosemgrep` was added.
-- [ ] `ENTRYPOINT ["/app/entrypoint.sh"]` is unchanged in both Dockerfiles.
-- [ ] The ADR number was confirmed with `ls docs/adr/`, the file exists, it has a
+- [x] No `# hadolint ignore=`, no `//nolint`, no `# nosemgrep` was added.
+- [x] `ENTRYPOINT ["/app/entrypoint.sh"]` is unchanged in both Dockerfiles.
+- [x] The ADR number was confirmed with `ls docs/adr/`, the file exists, it has a
       row in `docs/adr/index.md`, **and** an entry in `mkdocs.yml` `nav:`.
-- [ ] `mkdocs build --strict` exits 0.
-- [ ] The Helm chart's `livenessProbe` is `/livez` and `readinessProbe` is
+- [x] `mkdocs build --strict` exits 0.
+- [x] The Helm chart's `livenessProbe` is `/livez` and `readinessProbe` is
       `/readyz`; `helm template` renders them.
-- [ ] `README.md`, `docs/usage.md` and `CLAUDE.md` list `/livez` and `/readyz`,
+- [x] `README.md`, `docs/usage.md` and `CLAUDE.md` list `/livez` and `/readyz`,
       and none of them still describes `/health` as "returns HTTP 200" with no
       body.
-- [ ] `CHANGELOG.md` `## [Unreleased]` records the probes, the `HEALTHCHECK`, the
+- [x] `CHANGELOG.md` `## [Unreleased]` records the probes, the `HEALTHCHECK`, the
       `/health` body, the chart probe move, and the base-image unpin.
-- [ ] `make ci` is green, and `git status --porcelain` shows nothing stray — in
+- [x] `make ci` is green, and `git status --porcelain` shows nothing stray — in
       particular no `linux/` staging directory.
